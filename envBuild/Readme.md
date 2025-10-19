@@ -12,4 +12,6 @@ docker-compose up -d
 
 docker-compose down
 
-> extra: curl
+> extra: 
+curl
+sudo apt install libboost-all-dev

@@ -7,14 +7,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
+find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS context coroutine thread)
+
+# 使用 FetchContent_Declare 之前，必须包含该模块
+include(FetchContent)
+FetchContent_Declare(
+        uuid_v7
+        GIT_REPOSITORY https://github.com/mariusbancila/stduuid.git
+        GIT_TAG        v1.2.3
+)
+FetchContent_MakeAvailable(uuid_v7)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")
 # google IDL 目录
-set(GOOGLEAPIS_PROTOS_DIR "../thirdparty/googleapis")
+set(GOOGLEAPIS_PROTOS_DIR "../third_party/googleapis")
 # 收集 自定义IDL和其依赖 google IDL 目录中的 .proto 文件
 set(PROTO_FILES
-        "${MY_IDL_DIR}/UserService/v1/UserService.proto"
+        "${MY_IDL_DIR}/UserService/v1/user_service.proto"
         "${GOOGLEAPIS_PROTOS_DIR}/google/api/annotations.proto"
         "${GOOGLEAPIS_PROTOS_DIR}/google/api/http.proto"
 )
@@ -33,16 +43,28 @@ target_include_directories(my_proto_lib PUBLIC "$<BUILD_INTERFACE:${PROTO_BINARY
 # 2. 添加到 my_proto_lib 临时库
 protobuf_generate(
         TARGET my_proto_lib
+        LANGUAGE cpp
+        IMPORT_DIRS
+        "${GOOGLEAPIS_PROTOS_DIR}"
+        "${MY_IDL_DIR}"
+        PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
+        GENERATE_EXTENSIONS .pb.h .pb.cc
+)
+protobuf_generate(
+        TARGET my_proto_lib
+        LANGUAGE grpc
         IMPORT_DIRS
             "${GOOGLEAPIS_PROTOS_DIR}"
             "${MY_IDL_DIR}"
         PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
+        GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+        PLUGIN "protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
 )
 
 
 # 收集源文件
-set(HANDLER_FILES
-
+set(CALL_DATA_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/call_data/src/register_call_data.cc"
 )
 
 set(SERVICE_FILES
@@ -53,12 +75,17 @@ set(REPOSITORY_FILES
 
 )
 
+set(SERVER_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/server/user_service_server.cc"
+)
+
 # 添加主程序可执行文件
 add_executable(UserServiceServer
         main.cc
-        ${HANDLER_FILES}
+        ${CALL_DATA_FILES}
         ${SERVICE_FILES}
         ${REPOSITORY_FILES}
+        ${SERVER_FILES}
 )
 
 # 添加头文件包含目录

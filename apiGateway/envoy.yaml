@@ -1,40 +1,65 @@
 static_resources:
   listeners:
-  - name: listener_0
-    address:
-      # 直接让 Envoy 监听 8080 端口
-      socket_address: { address: 0.0.0.0, port_value: 8080 } 
-    filter_chains:
-    - filters:
-      - name: envoy.filters.network.http_connection_manager
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-          stat_prefix: ingress_http
-          route_config:
-            name: local_route
-            virtual_hosts:
-            - name: local_service
-              domains: ["*"]
-              routes:
-              - match: { prefix: "/" }
-                route:
-                  cluster: service_httpbin
-                  host_rewrite_literal: www.httpbin.org
-          http_filters:
-          - name: envoy.filters.http.router
-            typed_config:
-              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+    - name: listener_0
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 10000 # Envoy 对外提供服务的 HTTP 端口
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: local_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            # 将请求路由到名为 user_service_cluster 的集群
+                            cluster: user_service_cluster
+                            # 设置一个较长的超时时间
+                            timeout: 60s
+                http_filters:
+                  # 关键过滤器：gRPC-JSON Transcoder
+                  - name: envoy.filters.http.grpc_json_transcoder
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+                      # 指定 proto 描述文件的路径
+                      proto_descriptor: "/etc/envoy/proto.pb" # 这是 Envoy 容器内的路径
+                      # 明确告诉 transcoder 要为哪些服务进行转码
+                      services: ["UserService.v1.UserService"]
+                      print_options:
+                        add_whitespace: true
+                        always_print_primitive_fields: true
+                        always_print_enums_as_ints: false
+                        preserve_proto_field_names: true
+                  # 路由器过滤器，必须放在最后
+                  - name: envoy.filters.http.router
+                    typed_config: {}
 
   clusters:
-  - name: service_httpbin
-    type: LOGICAL_DNS
-    connect_timeout: 3s
-    load_assignment:
-      cluster_name: service_httpbin
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: www.httpbin.org
-                port_value: 80
+    - name: user_service_cluster # 集群名称，必须和上面 route.cluster 的值一致
+      connect_timeout: 5s
+      # 关键：因为后端是 gRPC 服务，所以必须使用 http2
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: user_service_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      # 你的微服务地址。如果 Envoy 和微服务都在 Docker 中，可以使用服务名。
+                      # 如果 Envoy 在 Docker 中，微服务在宿主机，可以使用 host.docker.internal
+                      address: "host.docker.internal"
+                      port_value: 50051 # 你的微服务端口
