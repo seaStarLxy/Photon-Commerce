@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
-find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS context coroutine thread)
+#find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS context coroutine thread)
 
 # 使用 FetchContent_Declare 之前，必须包含该模块
 include(FetchContent)

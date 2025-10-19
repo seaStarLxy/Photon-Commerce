@@ -11,9 +11,7 @@
 
 namespace UserService
 {
-    UserServiceServer::~UserServiceServer() {
-
-    }
+    UserServiceServer::~UserServiceServer() = default;
 
     void UserServiceServer::Run() {
         std::string server_address("0.0.0.0:50051");
