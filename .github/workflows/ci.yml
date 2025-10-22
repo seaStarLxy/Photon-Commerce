@@ -29,6 +29,7 @@ jobs:
                 -DCMAKE_PREFIX_PATH=/usr/local/grpc_install \
                 -DProtobuf_PROTOC_EXECUTABLE=/usr/local/grpc_install/bin/protoc \
                 -DgRPC_CPP_PLUGIN_EXECUTABLE=/usr/local/grpc_install/bin/grpc_cpp_plugin
+              mkdir -p $GITHUB_WORKSPACE/UserService/build/generated
                     
       - name: 4. Build project
         run: cmake --build $GITHUB_WORKSPACE/UserService/build
