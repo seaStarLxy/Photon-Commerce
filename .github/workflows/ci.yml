@@ -31,13 +31,10 @@ jobs:
           find / -name protoc 2>/dev/null || echo "PROTOC NOT FOUND"
       
       - name: 3. Configure CMake
-        run: cmake -B $GITHUB_WORKSPACE/UserService/build \
-                    -S $GITHUB_WORKSPACE/UserService \
-                    -DCMAKE_PREFIX_PATH=/usr/local/grpc_install
-
+        run: cmake -B $GITHUB_WORKSPACE/UserService/build -S $GITHUB_WORKSPACE/UserService
+                    
       - name: 4. Build project
-        # 这一步对应你 CLion 里的“构建”
-        run: cmake --build $GITHUB_WORKSPACE/UserService/build
+        run: cmake --build $GITHUB_WORKSPACE/UserService/build -DCMAKE_PREFIX_PATH=/usr/local/grpc_install
 
       - name: 5. Run Program (冒烟测试)
         run: |
