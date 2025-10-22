@@ -21,7 +21,7 @@ jobs:
       - name: 2. Install Boost.Coroutine patch
         run: |
           apt-get update
-          apt-get install -y libboost-coroutine-dev libssl-dev
+          apt-get install -y libboost-coroutine-dev libssl-dev ninja-build
       
       - name: 3. Configure CMake (严格按照 CLion 命令)
         run: |
