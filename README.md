@@ -15,3 +15,10 @@
     ```bash
     git submodule update --init --recursive
     ```
+
+## 命名规则
+类/结构体: PascalCase (大驼峰) - MyClass
+函数/方法: PascalCase (大驼峰) - MyFunction
+文件名: snake_case (蛇形) - my_file.h
+变量名: snake_case (蛇形) - my_variable (成员变量加 _ 后缀)
+命名空间: snake_case (蛇形) - my_namespace

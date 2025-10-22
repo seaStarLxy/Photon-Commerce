@@ -40,6 +40,12 @@ FetchContent_Declare(
         GIT_TAG v0.6.0
 )
 FetchContent_MakeAvailable(jwt-cpp)
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/seaStarLxy/spdlog.git
+        GIT_TAG        v1.16.0
+)
+FetchContent_MakeAvailable(spdlog)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")
@@ -112,6 +118,7 @@ set(MODEL_FILES
 
 set(DB_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/db/src/pq_connection.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/db/src/async_connection_pool.cc"
 )
 
 # 添加主程序可执行文件
@@ -138,5 +145,5 @@ target_link_libraries(UserServiceServer PUBLIC
         bcrypt
         jwt-cpp
         PostgreSQL::PostgreSQL
-#        ${PostgreSQL_LIBRARIES}
+        spdlog::spdlog
 )

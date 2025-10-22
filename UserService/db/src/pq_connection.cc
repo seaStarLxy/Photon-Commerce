@@ -22,7 +22,7 @@ boost::asio::awaitable<void> PQConnection::async_connect(const std::string &conn
         // 获取当前数据库状态，同时也负责驱动读写操作
         const auto poll_status = PQconnectPoll(conn_.get());
         if (poll_status == PGRES_POLLING_WRITING) {
-            // param1: 等待写操作， param2: 以协程的方式
+            // param1: 等待可以写操作， param2: 以协程的方式
             co_await socket_.async_wait(boost::asio::posix::stream_descriptor::wait_write, boost::asio::use_awaitable);
         } else if (poll_status == PGRES_POLLING_READING) {
             co_await socket_.async_wait(boost::asio::posix::stream_descriptor::wait_read, boost::asio::use_awaitable);
