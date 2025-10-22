@@ -46,7 +46,7 @@ jobs:
       - name: 5. Run Program (冒烟测试)
         run: |
           echo "Attempting to start the server..."
-          EXECUTABLE_PATH="$GITHUB_WORKSPACE/UserService/build/UserService"
+          EXECUTABLE_PATH="$GITHUB_WORKSPACE/UserService/build/UserServiceServer"
 
           # 检查文件是否存在
           if [ ! -f "$EXECUTABLE_PATH" ]; then
