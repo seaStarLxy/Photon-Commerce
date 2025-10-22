@@ -22,19 +22,16 @@ jobs:
         run: |
           apt-get update
           apt-get install -y libboost-coroutine-dev
-
-      - name: 2.5. Find gRPC Tools (DEBUG)
-        run: |
-          echo "Searching for grpc_cpp_plugin in the container..."
-          find / -name grpc_cpp_plugin 2>/dev/null || echo "PLUGIN NOT FOUND"
-          echo "Searching for protoc in the container..."
-          find / -name protoc 2>/dev/null || echo "PROTOC NOT FOUND"
       
       - name: 3. Configure CMake
-        run: cmake -B $GITHUB_WORKSPACE/UserService/build -S $GITHUB_WORKSPACE/UserService
+        run: cmake -B $GITHUB_WORKSPACE/UserService/build \
+                -S $GITHUB_WORKSPACE/UserService \
+                -DCMAKE_PREFIX_PATH=/usr/local/grpc_install \
+                -DProtobuf_PROTOC_EXECUTABLE=/usr/local/grpc_install/bin/protoc \
+                -DgRPC_CPP_PLUGIN_EXECUTABLE=/usr/local/grpc_install/bin/grpc_cpp_plugin
                     
       - name: 4. Build project
-        run: cmake --build $GITHUB_WORKSPACE/UserService/build -DCMAKE_PREFIX_PATH=/usr/local/grpc_install
+        run: cmake --build $GITHUB_WORKSPACE/UserService/build
 
       - name: 5. Run Program (冒烟测试)
         run: |
