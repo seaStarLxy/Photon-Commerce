@@ -8,7 +8,7 @@ using namespace common::db;
 PQConnection::PQConnection(boost::asio::io_context &ioc) : conn_(nullptr, &PQfinish), socket_(ioc) {
 }
 
-boost::asio::awaitable<void> PQConnection::async_connect(const std::string &conn_str) {
+boost::asio::awaitable<void> PQConnection::AsyncConnect(const std::string &conn_str) {
     // 异步启动连接
     conn_.reset(PQconnectStart(conn_str.c_str()));
     if (!conn_ || PQstatus(conn_.get()) == CONNECTION_BAD) {
@@ -34,7 +34,7 @@ boost::asio::awaitable<void> PQConnection::async_connect(const std::string &conn
     }
 }
 
-boost::asio::awaitable<PGResultPtr> PQConnection::async_exec_params(const std::string &query,
+boost::asio::awaitable<PGResultPtr> PQConnection::AsyncExecParams(const std::string &query,
                                                                     const std::vector<std::string> &params) {
     // 维护参数列表
     std::vector<const char *> param_values;
@@ -54,7 +54,7 @@ boost::asio::awaitable<PGResultPtr> PQConnection::async_exec_params(const std::s
         if (PQconsumeInput(conn_.get()) == 0) {
             throw std::runtime_error(std::string("Failed to consume input: ") + PQerrorMessage(conn_.get()));
         }
-        // 服务器已经发送完全部数据（可以安全的用 PQgetResult 接受结果了）
+        // 当前PQ连接不忙代表数据接受完整（可以安全的用 PQgetResult 接受结果了）
         if (PQisBusy(conn_.get()) == 0) {
             break;
         }

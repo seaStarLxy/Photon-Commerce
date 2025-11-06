@@ -26,3 +26,10 @@
 - 文件名: snake_case (蛇形) - my_file.h
 - 变量名: snake_case (蛇形) - my_variable (成员变量加 _ 后缀)
 - 命名空间: snake_case (蛇形) - my_namespace
+
+
+## 上传规则
+- feature: 开发新功能
+- bugfix: 修复bug
+- chore: 修改配置等
+- refactor: 大规模重构
