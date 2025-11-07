@@ -7,7 +7,7 @@
 #include <libpq-fe.h>
 #include <utility> // for std::move
 
-namespace UserService::model {
+namespace user_service::model {
     class User {
     public: // 公共接口
         // ===============================================

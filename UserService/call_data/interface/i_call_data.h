@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace UserService {
+namespace user_service {
     class ICallData {
     public:
         virtual ~ICallData() = default;
