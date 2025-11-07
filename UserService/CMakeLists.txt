@@ -46,6 +46,7 @@ FetchContent_Declare(
         GIT_TAG        v1.16.0
 )
 FetchContent_MakeAvailable(spdlog)
+add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")

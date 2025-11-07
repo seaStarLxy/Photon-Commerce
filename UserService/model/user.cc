@@ -3,7 +3,7 @@
 
 #include "user.h"
 
-namespace UserService {
+namespace user_service {
     namespace model {
     } // model
 } // UserService

@@ -2,7 +2,7 @@
 syntax = "proto3";
 
 // 自定义域名空间
-package UserService.v1;
+package user_service.v1;
 
 import "google/api/annotations.proto"; // 引入 http restful 路由配置
 
