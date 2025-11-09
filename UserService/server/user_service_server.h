@@ -3,17 +3,21 @@
 
 #pragma once
 
-#include <thread>
 #include <UserService/v1/user_service.grpc.pb.h>
+#include "service/interface/i_basic_user_service.h"
+#include "service/interface/i_auth_service.h"
+#include <thread>
 #include <grpcpp/grpcpp.h>
 #include <boost/asio/io_context.hpp>
 
-namespace user_service
+namespace user_service::server
 {
     class UserServiceServer
     {
     public:
-        UserServiceServer();
+        UserServiceServer(const std::shared_ptr<service::IAuthService>& auth_service,
+            const std::shared_ptr<service::IBasicUserService>& basic_service,
+            const std::shared_ptr<boost::asio::io_context>& ioc);
         ~UserServiceServer();
         void Run();
         void Shutdown();
@@ -24,9 +28,8 @@ namespace user_service
         std::unique_ptr<grpc::Server> server_;
         std::vector<std::thread> worker_threads_;
 
-        using work_guard_type = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
-        std::optional<work_guard_type> ioc_work_guard_;
-        boost::asio::io_context ioc_; // 提升为成员变量
-        std::vector<std::thread> asio_threads_; // Asio 线程池
+        const std::shared_ptr<boost::asio::io_context> ioc_;
+        std::shared_ptr<service::IAuthService> auth_service_;
+        std::shared_ptr<service::IBasicUserService> basic_service_;
     };
-} // UserService
+}

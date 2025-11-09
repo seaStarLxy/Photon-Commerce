@@ -6,30 +6,24 @@
 //
 
 #include "user_service_server.h"
-#include "call_data/include/register_call_data.h"
+#include "adapter/include/register_call_data.h"
 #include <boost/asio/io_context.hpp>
 #include <spdlog/spdlog.h>
 
-namespace user_service
+namespace user_service::server
 {
-    UserServiceServer::UserServiceServer(): ioc_(std::thread::hardware_concurrency()) {
-        ioc_work_guard_.emplace(boost::asio::make_work_guard(ioc_));
+    UserServiceServer::UserServiceServer(const std::shared_ptr<service::IAuthService>& auth_service,
+            const std::shared_ptr<service::IBasicUserService>& basic_service,
+            const std::shared_ptr<boost::asio::io_context>& ioc):
+    ioc_(ioc), auth_service_(auth_service), basic_service_(basic_service) {
+        SPDLOG_DEBUG("haha");
+        SPDLOG_DEBUG("UserServiceServer constructed. auth={}, basic={}, ioc={}",
+             (void*)auth_service.get(), (void*)basic_service.get(), (void*)ioc.get());
     }
     UserServiceServer::~UserServiceServer() = default;
 
     void UserServiceServer::Run() {
-        // 1. 启动 Asio 线程池 (用于业务逻辑)
-        int asio_workers = std::thread::hardware_concurrency();
-        SPDLOG_DEBUG("Starting {} Asio worker threads...", asio_workers);
-        asio_threads_.reserve(asio_workers);
-        for (int i = 0; i < asio_workers; ++i) {
-            asio_threads_.emplace_back([this] {
-                ioc_.run(); // 阻塞，直到 ioc 被 stop
-            });
-        }
-        SPDLOG_DEBUG("Asio threads startup finished");
-
-        // 2. 启动 gRPC 服务器
+        // 启动 gRPC 服务器
         std::string server_address("0.0.0.0:50051");
         grpc::ServerBuilder builder;
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
@@ -39,7 +33,7 @@ namespace user_service
         SPDLOG_DEBUG( "Server listening on {}", server_address);
 
 
-        (new RegisterCallData(&service_, cq_.get(), ioc_))->Init();
+        (new RegisterCallData(&service_, cq_.get(), *ioc_, basic_service_))->Init();
         SPDLOG_DEBUG("Seeded 1st RegisterCallData.");
 
 
@@ -62,12 +56,6 @@ namespace user_service
         for (auto& t : worker_threads_) {
             t.join();
         }
-        ioc_work_guard_.reset();
-        ioc_.stop();
-        for (auto& t : asio_threads_) {
-            t.join();
-        }
-        SPDLOG_DEBUG("Asio workers stopped.");
     }
 
     void UserServiceServer::HandleRpc() const {

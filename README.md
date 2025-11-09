@@ -29,9 +29,11 @@
 5. 基于 pqlib 实现异步数据库连接和连接池（封装协程）
 6. 耦合监听线程和协程（协程启动）
 7. 架构分层，基于领域驱动设计，实现充血 domain 对象
-8. 健壮性实现：服务降级和对象池
-8. 封装 grpc 客户端调用为协程
-9. saga模式: 保证微服务事务
+8. 依赖注入实现控制反转
+9. 资源池复用CallData：有界池+动态伸缩（无锁队列）
+10. CallData封装
+11. 封装 grpc 客户端调用为协程
+12. saga模式: 保证微服务事务
 
 
 ## 技术细节
@@ -101,6 +103,8 @@
 git checkout main
 git pull
 git checkout -b {new_branch_name}
+# 分支改名（切换到需要改名的分支）
+git branch -m {new_branch_name}
 git add && git commit && git commit -u origin {new_branch_name}
 # 发生修改
 git commit --amend && git commit --force-with-lease origin {new_branch_name}

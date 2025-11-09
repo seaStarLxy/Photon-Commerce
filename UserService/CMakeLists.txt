@@ -46,7 +46,7 @@ FetchContent_Declare(
         GIT_TAG        v1.16.0
 )
 FetchContent_MakeAvailable(spdlog)
-add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")
@@ -97,41 +97,43 @@ set(SERVER_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/server/user_service_server.cc"
 )
 
-set(CALL_DATA_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/call_data/src/register_call_data.cc"
+set(ADAPTER_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/src/register_call_data.cc"
 )
 
 set(SERVICE_FILES
-
+        "${CMAKE_CURRENT_SOURCE_DIR}/service/src/auth_service.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/service/src/basic_user_service.cc"
 )
 
 set(DOMAIN_FILES
 
 )
 
-set(REPOSITORY_FILES
-
+set(INFRASTRUCTURE_FILES
+        # dao
+        # redis
+        # db
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/pq_connection.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/async_connection_pool.cc"
+        # asio_thread_pool
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/asio_thread_pool/asio_thread_pool.cc"
 )
 
-set(MODEL_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/model/user.cc"
-)
+set(UTILS_FILES
 
-set(DB_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/db/src/pq_connection.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/db/src/async_connection_pool.cc"
 )
 
 # 添加主程序可执行文件
 add_executable(UserServiceServer
         main.cc
         ${SERVER_FILES}
-        ${CALL_DATA_FILES}
+        ${ADAPTER_FILES}
         ${SERVICE_FILES}
         ${DOMAIN_FILES}
-        ${REPOSITORY_FILES}
-        ${MODEL_FILES}
+        ${INFRASTRUCTURE_FILES}
         ${DB_FILES}
+        ${UTILS_FILES}
 )
 
 # 添加头文件包含目录
@@ -147,4 +149,5 @@ target_link_libraries(UserServiceServer PUBLIC
         jwt-cpp
         PostgreSQL::PostgreSQL
         spdlog::spdlog
+        Boost.DI
 )

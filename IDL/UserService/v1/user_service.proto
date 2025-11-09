@@ -1,72 +1,124 @@
-// IDL/user_service.proto
 syntax = "proto3";
 
-// 自定义域名空间
 package user_service.v1;
 
-import "google/api/annotations.proto"; // 引入 http restful 路由配置
+import "google/api/annotations.proto";
 
-// 用户服务定义
+
+// 1. AuthService (认证服务)
+service AuthService {
+  // 发送验证码
+  rpc SendCode(SendCodeRequest) returns (SendCodeResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/send_code"
+      body: "*"
+    };
+  }
+
+  // 密码登录
+  rpc LoginByPassword(LoginByPasswordRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/login_by_password"
+      body: "*"
+    };
+  }
+
+  // 验证码登录
+  rpc LoginByCode(LoginByCodeRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/login_by_code"
+      body: "*"
+    };
+  }
+}
+
+
+// 2. UserService (用户服务)
 service UserService {
-  // 用户注册
+  // 用户注册 (使用验证码)
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = {
       post: "/v1/users/register"
       body: "*"
     };
   }
-  // 用户登录
-  rpc Login(LoginRequest) returns (LoginResponse) {
-    option (google.api.http) = {
-      post: "/v1/users/login"
-      body: "*"
-    };
-  }
+
   // 获取用户信息
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
     option (google.api.http) = {
-      get: "/v1/users/{user_id}" // 使用路径参数
+      get: "/v1/users/{user_id}"
+    };
+  }
+
+  // 修改用户信息
+  rpc UpdateUserInfo(UpdateUserInfoRequest) returns (UpdateUserInfoResponse) {
+    option (google.api.http) = {
+      put: "/v1/users/{user.user_id}" // (使用 PATCH 语义)
+      body: "user"
     };
   }
 }
 
-// --- 消息体定义 ---
-
-// 用户信息
+// 消息体定义 (Messages)
+// 通用实体
 message User {
   string user_id = 1;
   string username = 2;
   string email = 3;
-  string avatar_url = 4; // 存储图片URL
+  string avatar_url = 4;
+  string phone_number = 5;
 }
 
-// 注册
+// AuthService 消息体
+message SendCodeRequest {
+  string phone_number = 1;
+  CodeUsage usage = 2;
+}
+enum CodeUsage {
+  UNKNOWN = 0;
+  USER_REGISTER = 1;
+  USER_LOGIN = 2;
+  RESET_PASSWORD = 3;
+}
+message SendCodeResponse {
+  bool status = 1;
+}
+
+message LoginByPasswordRequest {
+  string username = 1;
+  string password = 2;
+}
+message LoginByCodeRequest {
+  string phone_number = 1;
+  string code = 2;
+}
+message LoginResponse {
+  string token = 1;
+  User user = 2;
+}
+
+// UserService 消息体
 message RegisterRequest {
   string username = 1;
   string password = 2;
-  string email = 3;
-  string avatar_url = 4; // 注册时可以选填
+  string phone_number = 3;
+  string code = 4;
 }
-
 message RegisterResponse {
   string user_id = 1;
+  string token = 2;
 }
 
-// 登录
-message LoginRequest {
-  string username = 1;
-  string password = 2;
-}
-
-message LoginResponse {
-  string token = 1; // 返回JWT Token
-}
-
-// 获取用户信息
 message GetUserInfoRequest {
   string user_id = 1;
 }
-
 message GetUserInfoResponse {
   User user = 1;
+}
+
+message UpdateUserInfoRequest {
+  User user = 1;
+}
+message UpdateUserInfoResponse {
+  bool status = 1;
 }
