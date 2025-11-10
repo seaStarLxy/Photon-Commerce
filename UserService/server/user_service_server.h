@@ -24,7 +24,7 @@ namespace user_service::server
     private:
         void HandleRpc() const;
         std::unique_ptr<grpc::ServerCompletionQueue> cq_;
-        v1::UserService::AsyncService service_;
+        proto::v1::UserService::AsyncService service_;
         std::unique_ptr<grpc::Server> server_;
         std::vector<std::thread> worker_threads_;
 

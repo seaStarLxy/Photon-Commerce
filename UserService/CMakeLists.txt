@@ -21,25 +21,28 @@ FetchContent_Declare(
         GIT_TAG        v1.2.3
 )
 FetchContent_MakeAvailable(uuid_v7)
+
 FetchContent_Declare(
         bcrypt
         GIT_REPOSITORY https://github.com/starlxy123/Bcrypt.cpp
         GIT_TAG master
 )
 FetchContent_MakeAvailable(bcrypt)
+
 FetchContent_Declare(
         boost_di
         GIT_REPOSITORY https://github.com/seaStarLxy/di.git
         GIT_TAG v1.3.2
 )
 FetchContent_MakeAvailable(boost_di)
-include(FetchContent)
+
 FetchContent_Declare(
         jwt-cpp
         GIT_REPOSITORY https://github.com/seaStarLxy/jwt-cpp.git
         GIT_TAG v0.6.0
 )
 FetchContent_MakeAvailable(jwt-cpp)
+
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/seaStarLxy/spdlog.git
@@ -47,6 +50,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+
+FetchContent_Declare(
+        concurrentqueue
+        GIT_REPOSITORY https://github.com/seaStarLxy/concurrentqueue.git
+        GIT_TAG        v1.0.4 # 你可以指定一个具体的 release tag 来确保版本稳定
+)
+
+# 让 FetchContent 获取并配置依赖
+FetchContent_MakeAvailable(concurrentqueue)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")
@@ -98,7 +110,12 @@ set(SERVER_FILES
 )
 
 set(ADAPTER_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/src/register_call_data.cc"
+#        v1
+#        "adapter/v1/src/register_call_data.cc"
+#         v2
+#        "adapter/v2/object_pool/call_data_manager.cc"
+        "adapter/v2/src/register_call_data.cc"
+#        "adapter/v2/src/register_call_data.cc"
 )
 
 set(SERVICE_FILES
@@ -150,4 +167,5 @@ target_link_libraries(UserServiceServer PUBLIC
         PostgreSQL::PostgreSQL
         spdlog::spdlog
         Boost.DI
+        concurrentqueue
 )

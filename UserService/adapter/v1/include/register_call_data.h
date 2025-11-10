@@ -13,7 +13,7 @@
 #include <grpcpp/support/async_unary_call.h>
 
 
-namespace user_service {
+namespace user_service::adapter {
     class RegisterCallData: public ICallData {
     public:
         RegisterCallData(v1::UserService::AsyncService* service, grpc::ServerCompletionQueue* cq,

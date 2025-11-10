@@ -7,7 +7,7 @@
 #include <boost/asio/io_context.hpp>
 #include <spdlog/spdlog.h>
 
-using namespace user_service;
+using namespace user_service::adapter;
 
 RegisterCallData::RegisterCallData(v1::UserService::AsyncService *service, grpc::ServerCompletionQueue *cq,
                                    boost::asio::io_context &ioc, const std::shared_ptr<service::IBasicUserService>& basic_user_service)
