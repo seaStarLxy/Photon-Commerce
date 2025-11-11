@@ -9,12 +9,11 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
 find_package(PostgreSQL REQUIRED)
 message(STATUS "Found PostgreSQL: ${PostgreSQL_FOUND}")
-
-
-#find_package(Boost 1.74.0 REQUIRED CONFIG COMPONENTS context coroutine thread)
+find_package(Boost 1.85.0 REQUIRED COMPONENTS redis)
 
 # 使用 FetchContent_Declare 之前，必须包含该模块
 include(FetchContent)
+
 FetchContent_Declare(
         uuid_v7
         GIT_REPOSITORY https://github.com/seaStarLxy/stduuid.git
@@ -51,14 +50,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
-FetchContent_Declare(
-        concurrentqueue
-        GIT_REPOSITORY https://github.com/seaStarLxy/concurrentqueue.git
-        GIT_TAG        v1.0.4 # 你可以指定一个具体的 release tag 来确保版本稳定
-)
-
-# 让 FetchContent 获取并配置依赖
-FetchContent_MakeAvailable(concurrentqueue)
 
 # 自定义 IDL 目录
 set(MY_IDL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../IDL")
@@ -115,7 +106,6 @@ set(ADAPTER_FILES
 #         v2
 #        "adapter/v2/object_pool/call_data_manager.cc"
         "adapter/v2/src/register_call_data.cc"
-#        "adapter/v2/src/register_call_data.cc"
 )
 
 set(SERVICE_FILES
@@ -167,5 +157,5 @@ target_link_libraries(UserServiceServer PUBLIC
         PostgreSQL::PostgreSQL
         spdlog::spdlog
         Boost.DI
-        concurrentqueue
+        Boost::redis
 )

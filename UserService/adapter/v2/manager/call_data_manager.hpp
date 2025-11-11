@@ -5,7 +5,6 @@
 #include <type_traits> // for std::is_base_of
 #include <vector>
 #include <memory>
-#include <concurrentqueue.h>
 #include <UserService/v1/user_service.grpc.pb.h>
 #include <grpcpp/completion_queue.h>
 #include <boost/asio/io_context.hpp>

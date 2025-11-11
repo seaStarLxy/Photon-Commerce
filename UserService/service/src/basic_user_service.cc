@@ -12,7 +12,7 @@ BasicUserService::BasicUserService() {
 BasicUserService::~BasicUserService() = default;
 
 boost::asio::awaitable<RegisterResponse> BasicUserService::Register(const RegisterRequest& register_request) {
-    std::string prefix("Hello, ");
+    std::string prefix("Hello,  ");
     RegisterResponse register_response(prefix+register_request.username, register_request.code);
     co_return register_response;
 }

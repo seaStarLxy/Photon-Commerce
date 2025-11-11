@@ -16,3 +16,5 @@ docker-compose down
 curl
 sudo apt install libboost-all-dev
 > apt install libboost-coroutine-dev
+
+> zip unzip tar
