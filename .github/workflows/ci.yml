@@ -6,11 +6,15 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  VCPKG_ROOT: /opt/vcpkg
+  BUILD_DIR: ${{ github.workspace }}/UserService/build
+
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
     container:
-      image: seastarxy/grpc-dev:v2 # 你的公共镜像
+      image: seastarxy/grpc-dev:v2
 
     steps:
       - name: 1. Checkout code
@@ -18,29 +22,46 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: 2. Install Boost.Coroutine patch
+      - name: 2. Install dependencies
         run: |
           apt-get update
-          apt-get install -y libboost-coroutine-dev libssl-dev ninja-build
+          apt-get install -y libssl-dev ninja-build zip unzip tar
+
+      - name: 2.1 Clone vcpkg
+        uses: actions/checkout@v4
+        with:
+          repository: 'microsoft/vcpkg'
+          path: ${{ env.VCPKG_ROOT }}
+
+      - name: 2.2 Bootstrap vcpkg
+        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.sh
+
+      - name: 2.3 Setup vcpkg cache (设置缓存)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/buildtrees
+            ${{ env.VCPKG_ROOT }}/downloads
+            ${{ env.VCPKG_ROOT }}/installed
+            ${{ env.VCPKG_ROOT }}/packages
+          # 当 vcpkg.json 文件内容改变时，缓存才会失效
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
       
       - name: 3. Configure CMake (严格按照 CLion 命令)
         run: |
-          # 定义构建目录，与你的 CLion 保持一致
-          export BUILD_DIR=$GITHUB_WORKSPACE/UserService/build
-          
+          # 定义构建目录，与 CLion 保持一致          
           cmake -B $BUILD_DIR \
                 -S $GITHUB_WORKSPACE/UserService \
                 -G Ninja \
                 -DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja \
-                -DCMAKE_PREFIX_PATH=/usr/local/grpc_install
-          
-          # # 创建生成目录 (使用新的构建目录)
-          # mkdir -p $BUILD_DIR/generated
+                -DCMAKE_PREFIX_PATH=/usr/local/grpc_install \
+                -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
                   
       - name: 4. Build project (严格按照 CLion 命令)
         run: |
-          export BUILD_DIR=$GITHUB_WORKSPACE/UserService/build
           cmake --build $BUILD_DIR --target UserServiceServer
 
       - name: 5. Run Program (冒烟测试)
@@ -51,26 +72,26 @@ jobs:
           # 检查文件是否存在
           if [ ! -f "$EXECUTABLE_PATH" ]; then
             echo "Error: Executable not found at $EXECUTABLE_PATH"
-            # 列出 build 目录内容，方便你调试
+            # 方便调试
             ls -R $GITHUB_WORKSPACE/UserService/build
             exit 1
           fi
 
-          # 1. 把你的服务器程序放到后台运行
+          # 1. 后台运行
           $EXECUTABLE_PATH &
           
           # 2. 拿到这个后台进程的 PID
           SERVER_PID=$!
           echo "Server started with PID ${SERVER_PID}"
 
-          # 3. 等待 5 秒钟
-          sleep 5
+          # 3. 等待 30 秒钟
+          sleep 30
 
           # 4. 检查服务器进程是否还活着
           # kill -0 $PID 不会真的杀死进程，只是检查进程是否存在
           if kill -0 $SERVER_PID; then
             echo "SMOKE TEST SUCCESS: Server is still running after 5 seconds."
-            # 5. 杀死服务器，让 CI 步骤可以正常结束
+            # 5. 杀死服务，让 CI 步骤可以正常结束
             kill $SERVER_PID
           else
             echo "SMOKE TEST FAILED: Server crashed within 5 seconds!"
