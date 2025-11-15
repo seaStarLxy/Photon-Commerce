@@ -5,12 +5,19 @@
 #include <spdlog/spdlog.h>
 #include <boost/di.hpp>
 #include "infrastructure/asio_thread_pool/asio_thread_pool.h"
+#include "infrastructure/redis/include/verification_code_repository.h"
 #include "service/include/auth_service.h"
 #include "service/include/basic_user_service.h"
+#include "utils/include/code_generator.h"
+#include <boost/redis/src.hpp>
+// #include <boost/redis/connection.hpp>
+// #include <boost/asio/detached.hpp>
 
 using namespace user_service::infrastructure;
 using namespace user_service::service;
 using namespace user_service::server;
+using namespace user_service::util;
+using namespace user_service::domain;
 
 
 namespace di = boost::di;
@@ -20,7 +27,8 @@ void LogInit() {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%s:%# (%!)] %v");
 }
 
-auto CreateInjector(const std::shared_ptr<boost::asio::io_context>& ioc_ptr) {
+auto CreateInjector(const std::shared_ptr<boost::asio::io_context>& ioc_ptr,
+                    const std::shared_ptr<boost::redis::connection>& redis_conn) {
     /*
      * bind<T> 要什么，传入T，可以自动解析构造函数中的 T T* T智能指针等等
      * to<U> 给什么，传入的U至少可以隐式转换成T。省略to则代表直接构造T类型
@@ -29,6 +37,9 @@ auto CreateInjector(const std::shared_ptr<boost::asio::io_context>& ioc_ptr) {
     // 注意这里的di内部会对类型解析，所以无法使用前向声明，必须把使用include头文件
     return di::make_injector(
         di::bind<boost::asio::io_context>().to(ioc_ptr),
+        di::bind<boost::redis::connection>().to(redis_conn),
+        di::bind<ICodeGenerator>().to<CodeGenerator>().in(di::singleton),
+        di::bind<IVerificationCodeRepository>().to<VerificationCodeRepository>().in(di::singleton),
         di::bind<IAuthService>().to<AuthService>().in(di::singleton),
         di::bind<IBasicUserService>().to<BasicUserService>().in(di::singleton)
     );
@@ -43,7 +54,13 @@ int main()
         // 构建依赖注入控制器
         SPDLOG_INFO("starting create injector");
         auto ioc_ptr = std::make_shared<boost::asio::io_context>();
-        const auto injector = CreateInjector(ioc_ptr);
+        // 构建 redis 连接
+        const auto conn = std::make_shared<boost::redis::connection>(ioc_ptr->get_executor());
+        boost::redis::config cfg;
+        cfg.addr.host = "redis-cache";
+        cfg.addr.port = "6379";
+        conn->async_run(cfg, boost::asio::detached);
+        const auto injector = CreateInjector(ioc_ptr, conn);
 
         // 构建 asio 线程池
         SPDLOG_INFO("starting create asio thread pool");

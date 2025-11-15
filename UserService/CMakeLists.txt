@@ -9,7 +9,11 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
 find_package(PostgreSQL REQUIRED)
 message(STATUS "Found PostgreSQL: ${PostgreSQL_FOUND}")
-find_package(Boost 1.85.0 REQUIRED COMPONENTS redis)
+find_package(Boost REQUIRED COMPONENTS redis)
+
+
+#find_package(boost_redis CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # 使用 FetchContent_Declare 之前，必须包含该模块
 include(FetchContent)
@@ -116,12 +120,13 @@ set(SERVICE_FILES
 )
 
 set(DOMAIN_FILES
-
+#    "${CMAKE_CURRENT_SOURCE_DIR}/"
 )
 
 set(INFRASTRUCTURE_FILES
         # dao
         # redis
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/redis/src/verification_code_repository.cc"
         # db
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/pq_connection.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/async_connection_pool.cc"
@@ -130,7 +135,7 @@ set(INFRASTRUCTURE_FILES
 )
 
 set(UTILS_FILES
-
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/code_generator.cc"
 )
 
 # 添加主程序可执行文件
@@ -154,10 +159,14 @@ target_include_directories(UserServiceServer PUBLIC
 target_link_libraries(UserServiceServer PUBLIC
         my_proto_lib        # 链接自己生成的 proto 代码库
         gRPC::grpc++
+        OpenSSL::SSL
+        OpenSSL::Crypto
         bcrypt
         jwt-cpp
         PostgreSQL::PostgreSQL
         spdlog::spdlog
         Boost.DI
         Boost::redis
+        ssl
+        crypto
 )

@@ -30,7 +30,7 @@ static_resources:
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
                       proto_descriptor: "/etc/envoy/proto.pb"
-                      services: ["user_service.proto.v1.UserService"]
+                      services: ["user_service.proto.v1.UserService", "user_service.proto.v1.AuthService"]
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
