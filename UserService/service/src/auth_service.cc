@@ -9,7 +9,7 @@ using namespace user_service::service;
 AuthService::AuthService(const std::shared_ptr<util::ICodeGenerator>& code_generator,
     const std::shared_ptr<domain::IVerificationCodeRepository>& code_repository):
     code_generator_(code_generator), code_repository_(code_repository) {
-
+    SPDLOG_DEBUG("Execute AuthService Constructor");
 }
 
 AuthService::~AuthService() = default;

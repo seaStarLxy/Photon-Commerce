@@ -7,7 +7,7 @@
 using namespace user_service::service;
 
 BasicUserService::BasicUserService() {
-
+    SPDLOG_DEBUG("Execute BasicUserService Constructor");
 }
 
 BasicUserService::~BasicUserService() = default;

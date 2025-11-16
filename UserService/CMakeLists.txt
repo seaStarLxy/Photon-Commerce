@@ -124,12 +124,13 @@ set(DOMAIN_FILES
 )
 
 set(INFRASTRUCTURE_FILES
-        # dao
-        # redis
-        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/redis/src/verification_code_repository.cc"
-        # db
-        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/pq_connection.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/db/src/async_connection_pool.cc"
+        # domain_implement
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/domain_implement/src/verification_code_repository.cc"
+        # persistence
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/persistence/postgresql/src/pq_connection.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/persistence/postgresql/src/async_connection_pool.cc"
+        # state_storage
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/state_storage/redis/redis_client.cc"
         # asio_thread_pool
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/asio_thread_pool/asio_thread_pool.cc"
 )
