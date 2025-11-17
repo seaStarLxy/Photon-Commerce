@@ -6,6 +6,7 @@
 #include <thread>
 #include <boost/asio/io_context.hpp>
 #include <spdlog/spdlog.h>
+#include <optional>
 
 namespace user_service::infrastructure {
     class AsioThreadPool {

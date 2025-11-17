@@ -25,14 +25,16 @@ UserServiceServer::~UserServiceServer() = default;
 
 void UserServiceServer::Run() {
     // 启动 gRPC 服务器
-    std::string server_address("0.0.0.0:50051");
+    std::string ipv4_address("0.0.0.0:50051");
+    // std::string ipv6_address("[::]:50051");
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(ipv4_address, grpc::InsecureServerCredentials());
+    // builder.AddListeningPort(ipv6_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&auth_grpc_service_);
     builder.RegisterService(&basic_user_grpc_service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
-    SPDLOG_DEBUG("Server listening on {}", server_address);
+    SPDLOG_DEBUG("Server listening on {}", ipv4_address);
 
     // 原始播种法
     // (new RegisterCallData(&service_, cq_.get(), *ioc_, basic_service_))->Init();

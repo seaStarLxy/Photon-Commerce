@@ -3,6 +3,7 @@
 
 #pragma once
 #include <boost/asio.hpp>
+#include <optional>
 
 namespace user_service::domain {
     class IVerificationCodeRepository {

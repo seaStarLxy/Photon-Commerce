@@ -18,3 +18,10 @@ sudo apt install libboost-all-dev
 > apt install libboost-coroutine-dev
 
 > zip unzip tar
+>
+
+# grpc-dev-wsl
+```shell
+git
+sudo apt install curl zip unzip tar build-essential 
+```

@@ -3,6 +3,15 @@
   "name": "ecommerce-system",
   "version-string": "0.1.0",
   "dependencies": [
-    "boost-redis"
+    "grpc",
+    "protobuf",
+    "libpq",
+    "boost-redis",
+    "openssl",
+    "stduuid",
+    "cryptopp",
+    "bext-di",
+    "jwt-cpp",
+    "spdlog"
   ]
 }

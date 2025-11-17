@@ -7,14 +7,12 @@ on:
     branches: [ "main" ]
 
 env:
-  VCPKG_ROOT: /opt/vcpkg
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
   BUILD_DIR: ${{ github.workspace }}/UserService/build
 
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
-    container:
-      image: seastarxy/grpc-dev:v2
 
     steps:
       - name: 1. Checkout code
@@ -24,8 +22,23 @@ jobs:
 
       - name: 2. Install dependencies
         run: |
-          apt-get update
-          apt-get install -y libssl-dev ninja-build zip unzip tar
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            ninja-build \
+            zip \
+            unzip \
+            tar \
+            libssl-dev \
+            curl \
+            gdb \
+            bison \
+            flex \
+            autoconf \
+            automake \
+            libtool \
+            git
 
       - name: 2.1 Clone vcpkg
         run: |
@@ -34,7 +47,7 @@ jobs:
       - name: 2.2 Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.sh
 
-      - name: 2.3 Setup vcpkg cache (设置缓存)
+      - name: 2.3 Setup vcpkg cache
         uses: actions/cache@v4
         with:
           path: |
@@ -46,32 +59,29 @@ jobs:
           key: vcpkg-${{ runner.os }}-${{ hashFiles('**/vcpkg.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-
-      
-      - name: 3. Configure CMake (严格按照 CLion 命令)
+
+      - name: 3. Configure CMake
         run: |
-          # 定义构建目录，与 CLion 保持一致          
           cmake -B $BUILD_DIR \
                 -S $GITHUB_WORKSPACE/UserService \
                 -G Ninja \
                 -DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja \
-                -DCMAKE_PREFIX_PATH=/usr/local/grpc_install \
                 -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
-                  
-      - name: 4. Build project (严格按照 CLion 命令)
+
+      - name: 4. Build project
         run: |
           cmake --build $BUILD_DIR --target UserServiceServer
 
       - name: 5. Run Program (冒烟测试)
         run: |
           echo "Attempting to start the server..."
-          EXECUTABLE_PATH="$GITHUB_WORKSPACE/UserService/build/UserServiceServer"
+          EXECUTABLE_PATH="$BUILD_DIR/UserServiceServer"
 
           # 检查文件是否存在
           if [ ! -f "$EXECUTABLE_PATH" ]; then
             echo "Error: Executable not found at $EXECUTABLE_PATH"
-            # 方便调试
-            ls -R $GITHUB_WORKSPACE/UserService/build
+            ls -R $BUILD_DIR
             exit 1
           fi
 
@@ -82,16 +92,16 @@ jobs:
           SERVER_PID=$!
           echo "Server started with PID ${SERVER_PID}"
 
-          # 3. 等待 30 秒钟
-          sleep 30
+          # 3. 等待 10 秒
+          echo "Waiting 10 seconds for smoke test..."
+          sleep 10
 
           # 4. 检查服务器进程是否还活着
-          # kill -0 $PID 不会真的杀死进程，只是检查进程是否存在
           if kill -0 $SERVER_PID; then
-            echo "SMOKE TEST SUCCESS: Server is still running after 5 seconds."
+            echo "SMOKE TEST SUCCESS: Server is still running after 10 seconds."
             # 5. 杀死服务，让 CI 步骤可以正常结束
             kill $SERVER_PID
           else
-            echo "SMOKE TEST FAILED: Server crashed within 5 seconds!"
+            echo "SMOKE TEST FAILED: Server crashed within 10 seconds!"
             exit 1 # 退出码非 0，标记 CI 失败
           fi

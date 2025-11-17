@@ -9,49 +9,15 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
 find_package(PostgreSQL REQUIRED)
 message(STATUS "Found PostgreSQL: ${PostgreSQL_FOUND}")
-find_package(Boost REQUIRED COMPONENTS redis)
-
-
 #find_package(boost_redis CONFIG REQUIRED)
+#find_package(Boost REQUIRED COMPONENTS redis)
 find_package(OpenSSL REQUIRED)
+find_package(stduuid CONFIG REQUIRED)
+#find_package(Boost.DI CONFIG REQUIRED)
+find_package(jwt-cpp CONFIG REQUIRED)
+find_package(cryptopp REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
-# 使用 FetchContent_Declare 之前，必须包含该模块
-include(FetchContent)
-
-FetchContent_Declare(
-        uuid_v7
-        GIT_REPOSITORY https://github.com/seaStarLxy/stduuid.git
-        GIT_TAG        v1.2.3
-)
-FetchContent_MakeAvailable(uuid_v7)
-
-FetchContent_Declare(
-        bcrypt
-        GIT_REPOSITORY https://github.com/starlxy123/Bcrypt.cpp
-        GIT_TAG master
-)
-FetchContent_MakeAvailable(bcrypt)
-
-FetchContent_Declare(
-        boost_di
-        GIT_REPOSITORY https://github.com/seaStarLxy/di.git
-        GIT_TAG v1.3.2
-)
-FetchContent_MakeAvailable(boost_di)
-
-FetchContent_Declare(
-        jwt-cpp
-        GIT_REPOSITORY https://github.com/seaStarLxy/jwt-cpp.git
-        GIT_TAG v0.6.0
-)
-FetchContent_MakeAvailable(jwt-cpp)
-
-FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/seaStarLxy/spdlog.git
-        GIT_TAG        v1.16.0
-)
-FetchContent_MakeAvailable(spdlog)
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
 
@@ -162,12 +128,9 @@ target_link_libraries(UserServiceServer PUBLIC
         gRPC::grpc++
         OpenSSL::SSL
         OpenSSL::Crypto
-        bcrypt
-        jwt-cpp
         PostgreSQL::PostgreSQL
+        cryptopp::cryptopp
+        jwt-cpp::jwt-cpp
         spdlog::spdlog
-        Boost.DI
-        Boost::redis
-        ssl
-        crypto
+        stduuid
 )

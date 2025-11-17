@@ -55,7 +55,7 @@ int main()
         SPDLOG_INFO("starting create injector");
         auto ioc_ptr = std::make_shared<boost::asio::io_context>();
 
-        const RedisConfig app_redis_config = {"redis-cache", "6379"};
+        const RedisConfig app_redis_config = {"127.0.0.1", "6379"};
         const auto injector = CreateInjector(ioc_ptr, app_redis_config);
 
         // 构建 asio 线程池
