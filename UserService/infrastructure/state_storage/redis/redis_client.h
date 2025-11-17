@@ -15,8 +15,9 @@ namespace user_service::infrastructure {
     public:
         RedisClient(const std::shared_ptr<boost::asio::io_context>& ioc, const RedisConfig& config);
         ~RedisClient();
-        void Run();
+        void Run() const;
         boost::asio::awaitable<void> Set(const std::string& key, const std::string& value);
+        boost::asio::awaitable<void> Set(const std::string& key, const std::string& value, const std::chrono::seconds& expiry);
         boost::asio::awaitable<std::optional<std::string>> Get(const std::string& key);
     private:
         const std::shared_ptr<boost::asio::io_context> ioc_;

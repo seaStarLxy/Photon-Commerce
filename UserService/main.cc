@@ -9,7 +9,7 @@
 #include "infrastructure/state_storage/redis/redis_client.h"
 #include "service/include/auth_service.h"
 #include "service/include/basic_user_service.h"
-#include "utils/include/code_generator.h"
+#include "utils/include/verification_code_generator.h"
 #include <boost/redis/src.hpp>
 
 
@@ -38,7 +38,7 @@ auto CreateInjector(const std::shared_ptr<boost::asio::io_context>& ioc_ptr, con
         di::bind<boost::asio::io_context>().to(ioc_ptr),
         di::bind<RedisConfig>().to(redis_config),
         di::bind<RedisClient>().in(di::singleton),
-        di::bind<ICodeGenerator>().to<CodeGenerator>().in(di::singleton),
+        di::bind<IVerificationCodeGenerator>().to<CodeGenerator>().in(di::singleton),
         di::bind<IVerificationCodeRepository>().to<VerificationCodeRepository>().in(di::singleton),
         di::bind<IAuthService>().to<AuthService>().in(di::singleton),
         di::bind<IBasicUserService>().to<BasicUserService>().in(di::singleton)

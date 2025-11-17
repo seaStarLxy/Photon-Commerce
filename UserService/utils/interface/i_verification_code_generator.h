@@ -5,9 +5,9 @@
 #include <string>
 
 namespace user_service::util {
-    class ICodeGenerator {
+    class IVerificationCodeGenerator {
     public:
-        virtual ~ICodeGenerator() = default;
+        virtual ~IVerificationCodeGenerator() = default;
         virtual std::string Generate(int length) = 0;
     };
 }

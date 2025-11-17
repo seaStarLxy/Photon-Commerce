@@ -2,11 +2,11 @@
 // All Rights Reserved.
 
 #pragma once
-#include "utils/interface/i_code_generator.h"
+#include "utils/interface/i_verification_code_generator.h"
 #include <random>
 
 namespace user_service::util {
-    class CodeGenerator final: public ICodeGenerator{
+    class CodeGenerator final: public IVerificationCodeGenerator{
     public:
         ~CodeGenerator() override;
         std::string Generate(int length) override;

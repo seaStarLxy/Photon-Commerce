@@ -102,7 +102,7 @@ set(INFRASTRUCTURE_FILES
 )
 
 set(UTILS_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/code_generator.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/verification_code_generator.cc"
 )
 
 # 添加主程序可执行文件
