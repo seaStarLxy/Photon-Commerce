@@ -9,11 +9,8 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found gRPC: ${gRPC_FOUND}")
 find_package(PostgreSQL REQUIRED)
 message(STATUS "Found PostgreSQL: ${PostgreSQL_FOUND}")
-#find_package(boost_redis CONFIG REQUIRED)
-#find_package(Boost REQUIRED COMPONENTS redis)
 find_package(OpenSSL REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
-#find_package(Boost.DI CONFIG REQUIRED)
 find_package(jwt-cpp CONFIG REQUIRED)
 find_package(cryptopp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
@@ -33,9 +30,10 @@ set(PROTO_FILES
 )
 message(STATUS "Proto files: ${PROTO_FILES}")
 
+
 # 生成文件存放目录
 set(PROTO_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
-
+file(MAKE_DIRECTORY ${PROTO_BINARY_DIR})
 # 注册自定义临时库目标
 add_library(my_proto_lib OBJECT
         ${PROTO_FILES}
@@ -92,6 +90,7 @@ set(DOMAIN_FILES
 set(INFRASTRUCTURE_FILES
         # domain_implement
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/domain_implement/src/verification_code_repository.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/domain_implement/src/user_repository.cc"
         # persistence
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/persistence/postgresql/src/pq_connection.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/infrastructure/persistence/postgresql/src/async_connection_pool.cc"
@@ -114,7 +113,6 @@ add_executable(UserServiceServer
         ${SERVICE_FILES}
         ${DOMAIN_FILES}
         ${INFRASTRUCTURE_FILES}
-        ${DB_FILES}
         ${UTILS_FILES}
 )
 

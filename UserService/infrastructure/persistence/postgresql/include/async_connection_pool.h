@@ -10,6 +10,11 @@
 #include <spdlog/spdlog.h>
 
 namespace user_service::infrastructure {
+    // 配置文件
+    struct DbPoolConfig {
+        std::string conn_str;
+        int pool_size;
+    };
     class AsyncConnectionPool;
     // Deleter 的工作不是 delete 连接，而是将其归还给连接池
     struct ConnectionReleaser {
@@ -29,7 +34,7 @@ namespace user_service::infrastructure {
 
     class AsyncConnectionPool : public std::enable_shared_from_this<AsyncConnectionPool> {
     public:
-        AsyncConnectionPool(boost::asio::io_context &ioc, std::string conn_str, int pool_size);
+        AsyncConnectionPool(const std::shared_ptr<boost::asio::io_context>& ioc, const DbPoolConfig& db_pool_config);
 
         boost::asio::awaitable<void> Init();
 
@@ -38,9 +43,9 @@ namespace user_service::infrastructure {
     private:
         friend struct ConnectionReleaser;
 
-        void ReturnConnection(std::shared_ptr<PQConnection> conn_sh_ptr);
+        void ReturnConnection(const std::shared_ptr<PQConnection>& conn_sh_ptr);
 
-        boost::asio::io_context &ioc_;
+        const std::shared_ptr<boost::asio::io_context> ioc_;
         const std::string conn_str_;
         const int pool_size_;
         std::mutex mutex_;

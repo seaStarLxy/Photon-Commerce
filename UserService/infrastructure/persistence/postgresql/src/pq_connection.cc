@@ -2,6 +2,7 @@
 // All Rights Reserved.
 
 #include "../include/pq_connection.h"
+#include <spdlog/spdlog.h>
 
 using namespace user_service::infrastructure;
 
@@ -27,6 +28,7 @@ boost::asio::awaitable<void> PQConnection::AsyncConnect(const std::string &conn_
         } else if (poll_status == PGRES_POLLING_READING) {
             co_await socket_.async_wait(boost::asio::posix::stream_descriptor::wait_read, boost::asio::use_awaitable);
         } else if (poll_status == PGRES_POLLING_OK) {
+            SPDLOG_DEBUG("Connected to Postgresql successfully!");
             co_return; // 连接成功
         } else {
             throw std::runtime_error(std::string("Async connection failed: ") + PQerrorMessage(conn_.get()));

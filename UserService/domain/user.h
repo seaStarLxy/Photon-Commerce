@@ -5,7 +5,11 @@
 #include <string>
 #include <optional>
 #include <chrono>
-#include <stdexcept>
+// #include "infrastructure/persistence/dao/user_dao.h"
+
+namespace user_service::infrastructure {
+    class UserDao;
+}
 
 namespace user_service::domain
 {
@@ -19,7 +23,7 @@ namespace user_service::domain
     };
     class User
     {
-        friend class UserDao;   // friend & 前向声明
+        friend class infrastructure::UserDao;   // friend & 前向声明
     public:
         using TimePoint = std::chrono::system_clock::time_point;
 
