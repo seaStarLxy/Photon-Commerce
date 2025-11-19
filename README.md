@@ -63,27 +63,74 @@
 > 这一部分的设计技术颇为广泛，耗时最久，实现巨难，有时间记得先补充这里
 
 
-## 项目部署
+## 开发环境部署
 
-### 本项目包含 Git 子模块
+### 1. 源代码拉取
+> 务必注意：本项目包含 Git 子模块
+```bash
+# 首次克隆项目，务必使用 `--recursive` 参数同时克隆子模块。
+git clone --recursive <Project URL>
+```
 
-- **首次克隆项目**
-  > 第一次克隆本项目，务必使用 `--recursive` 参数同时克隆子模块。
+```bash
+# 如果已经克隆了项目，但忘记添加 `--recursive` 参数，或者子模块目录为空，运行以下命令初始化并拉取子模块。
+git submodule update --init --recursive
+```
 
-    ```bash
-    git clone --recursive <Project URL>
-    ```
+### 2. 编译环境部署
+#### 安装基础工具
+```bash
+sudo apt update
+sudo apt install -y build-essential pkg-config ninja-build zip unzip tar libssl-dev curl gdb  bison flex autoconf automake libtool git net-tools
+```
 
-- **更新子模块**
-  > 如果已经克隆了项目，但忘记添加 `--recursive` 参数，或者子模块目录为空，运行以下命令初始化并拉取子模块。
+#### 安装 vcpkg
+```bash
+git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+~/vcpkg/bootstrap-vcpkg.sh
+echo "" >> ~/.bashrc
+echo "# vcpkg config" >> ~/.bashrc
+echo "export VCPKG_ROOT=~/vcpkg" >> ~/.bashrc
+echo 'export PATH=$VCPKG_ROOT:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
 
-    ```bash
-    git submodule update --init --recursive
-    ```
+#### cmake 参数
+> -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+### 3. envoy 部署
+#### 安装
+```shell
+wget -O- https://apt.envoyproxy.io/signing.key | sudo gpg --dearmor -o /etc/apt/keyrings/envoy-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/envoy-keyring.gpg] https://apt.envoyproxy.io bookworm main" | sudo tee /etc/apt/sources.list.d/envoy.list
+sudo apt update
+sudo apt install envoy
+envoy --version
+```
+
+#### 启动
+
+```shell
+# 生成 proto.pb
+~/ECommerceSystem-Microservices/UserService/cmake-build-debug/vcpkg_installed/x64-linux/tools/protobuf/protoc \
+  -I ~/ECommerceSystem-Microservices/IDL \
+  -I ~/ECommerceSystem-Microservices/third_party/googleapis \
+  --include_imports \
+  --descriptor_set_out=~/ECommerceSystem-Microservices/apiGateway/proto.pb \
+  ~/ECommerceSystem-Microservices/IDL/UserService/v1/user_service.proto
+```
+```shell
+# 前台运行 envoy
+envoy -c ~/ECommerceSystem-Microservices/apiGateway/envoy.yaml -l info
+```
+
+### 4. 数据库安装
+1. 持久化: Postgresql
+2. 状态管理: Redis
   
 ## 项目开发
 
-### 命名规则
+### 1. 命名规则
 - 类/结构体: PascalCase (大驼峰) - MyClass
 - 函数/方法: PascalCase (大驼峰) - MyFunction
 - 文件名: snake_case (蛇形) - my_file.h
@@ -91,27 +138,30 @@
 - 命名空间: snake_case (蛇形) - my_namespace
 
 
-### 分支命名规则
+### 2. 分支命名规则
 - feature: 开发新功能
 - bugfix: 修复bug
 - chore: 修改配置等
 - refactor: 大规模重构
 
 
-### 开发规范
+### 3. 开发规范
 1. 开发前check out main
 2. 根据*分支命名规则*创建分支
 3. 进行开发后add commit push
-4. 若 CICD 不通过，amend commit，然后force-with-lease推送
+4. CICD 不通过需重新 commit 后提交
 
 ```shell
 # 从main开始创建新分支工作
 git checkout main
 git pull
 git checkout -b {new_branch_name}
-# 分支改名（切换到需要改名的分支）
+# 此时进行开发
+# 开发结束后可能需要分支改名（切换到需要改名的分支）
 git branch -m {new_branch_name}
-git add && git commit && git commit -u origin {new_branch_name}
-# 发生修改
-git commit --amend && git commit --force-with-lease origin {new_branch_name}
+git add .
+git commit -s -m "{your_commit_message}"
+git push -u origin {new_branch_name}
+# 发生修改则重复 commit 和 push
 ```
+

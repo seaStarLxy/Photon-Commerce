@@ -9,8 +9,9 @@
 using namespace user_service::service;
 
 AuthService::AuthService(const std::shared_ptr<util::IVerificationCodeGenerator>& code_generator,
-                         const std::shared_ptr<domain::IVerificationCodeRepository>& code_repository) :
-    verification_code_generator_(code_generator), verification_code_repository_(code_repository)
+                         const std::shared_ptr<domain::IVerificationCodeRepository>& code_repository,
+                         const std::shared_ptr<domain::IUserRepository>& user_repository):
+    verification_code_generator_(code_generator), verification_code_repository_(code_repository), user_repository_(user_repository)
 {
     SPDLOG_DEBUG("Execute AuthService Constructor");
 }

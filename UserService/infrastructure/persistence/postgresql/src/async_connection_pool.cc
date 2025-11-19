@@ -6,12 +6,12 @@
 using namespace user_service::infrastructure;
 
 
-AsyncConnectionPool::AsyncConnectionPool(boost::asio::io_context &ioc, std::string conn_str, int pool_size)
+AsyncConnectionPool::AsyncConnectionPool(const std::shared_ptr<boost::asio::io_context>& ioc, const DbPoolConfig& db_pool_config)
     : ioc_(ioc),
-      conn_str_(std::move(conn_str)),
-      pool_size_(pool_size),
-      signal_channel_(ioc, (std::numeric_limits<std::size_t>::max)()){
-    if (pool_size <= 0) {
+      conn_str_(db_pool_config.conn_str),
+      pool_size_(db_pool_config.pool_size),
+      signal_channel_(*ioc, (std::numeric_limits<std::size_t>::max)()){
+    if (pool_size_ <= 0) {
         throw std::invalid_argument("Pool size must be positive.");
     }
 }
@@ -19,7 +19,7 @@ AsyncConnectionPool::AsyncConnectionPool(boost::asio::io_context &ioc, std::stri
 boost::asio::awaitable<void> AsyncConnectionPool::Init() {
     spdlog::info("Initializing connection pool with size {}...", pool_size_);
     for (int i = 0; i < pool_size_; ++i) {
-        auto conn = std::make_shared<PQConnection>(ioc_);
+        auto conn = std::make_shared<PQConnection>(*ioc_);
         co_await conn->AsyncConnect(conn_str_);
         {
             std::lock_guard lock(mutex_);
@@ -42,7 +42,7 @@ boost::asio::awaitable<PooledConnection> AsyncConnectionPool::GetConnection() {
     co_return PooledConnection(conn_sh_ptr.get(), ConnectionReleaser(conn_sh_ptr, shared_from_this()));
 }
 
-void AsyncConnectionPool::ReturnConnection(std::shared_ptr<PQConnection> conn_sh_ptr) {
+void AsyncConnectionPool::ReturnConnection(const std::shared_ptr<PQConnection>& conn_sh_ptr) {
     {
         // 没有解锁操作，纯靠RAII，但unique_lock可以自己解锁
         std::lock_guard lock(mutex_);
