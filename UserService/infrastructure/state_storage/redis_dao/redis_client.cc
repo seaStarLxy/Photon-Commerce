@@ -13,6 +13,7 @@ using namespace user_service::infrastructure;
 RedisClient::RedisClient(const std::shared_ptr<boost::asio::io_context>& ioc, const RedisConfig& config):
     ioc_(ioc), conn_(std::make_shared<boost::redis::connection>(boost::asio::make_strand(ioc->get_executor())))
 {
+    SPDLOG_DEBUG("Execute RedisClient Constructor");
     cfg_.addr.host = config.host;
     cfg_.addr.port = config.port;
 }

@@ -75,7 +75,8 @@ jobs:
         run: |
           echo "Attempting to start the server..."
           EXECUTABLE_PATH="$BUILD_DIR/UserServiceServer"
-
+          
+          cd "$BUILD_DIR"
           # 检查文件是否存在
           if [ ! -f "$EXECUTABLE_PATH" ]; then
             echo "Error: Executable not found at $EXECUTABLE_PATH"

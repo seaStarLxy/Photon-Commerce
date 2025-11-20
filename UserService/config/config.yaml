@@ -1,0 +1,15 @@
+# config.yaml
+server:
+  port: 50051
+
+redis:
+  host: "grpc-dev-redis.bbqzfi.ng.0001.apse1.cache.amazonaws.com"
+  port: 6379
+
+postgresql:
+  host: "grpc-dev-database.cvosiiw6iypg.ap-southeast-1.rds.amazonaws.com"
+  port: 5432
+  user: "lxy"
+  password: "12345678"
+  dbname: "postgres"
+  pool_size: 4

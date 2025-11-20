@@ -10,7 +10,8 @@ AsyncConnectionPool::AsyncConnectionPool(const std::shared_ptr<boost::asio::io_c
     : ioc_(ioc),
       conn_str_(db_pool_config.conn_str),
       pool_size_(db_pool_config.pool_size),
-      signal_channel_(*ioc, (std::numeric_limits<std::size_t>::max)()){
+      signal_channel_(*ioc, (std::numeric_limits<std::size_t>::max)()) {
+    SPDLOG_DEBUG("Execute AsyncConnectionPool Constructor");
     if (pool_size_ <= 0) {
         throw std::invalid_argument("Pool size must be positive.");
     }

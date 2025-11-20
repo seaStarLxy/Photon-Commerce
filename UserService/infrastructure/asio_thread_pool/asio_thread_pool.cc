@@ -2,11 +2,12 @@
 // All Rights Reserved.
 
 #include "asio_thread_pool.h"
+#include <spdlog/spdlog.h>
 
 using namespace user_service::infrastructure;
 
 AsioThreadPool::AsioThreadPool(const std::shared_ptr<boost::asio::io_context>& ioc): ioc_(ioc) {
-
+    SPDLOG_DEBUG("Execute AsioThreadPool Constructor");
 }
 
 AsioThreadPool::~AsioThreadPool() {

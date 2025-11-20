@@ -20,8 +20,10 @@ namespace user_service::infrastructure {
         boost::asio::awaitable<void> Set(const std::string& key, const std::string& value, const std::chrono::seconds& expiry);
         boost::asio::awaitable<std::optional<std::string>> Get(const std::string& key);
     private:
+        // 等待联通
         boost::asio::awaitable<void> Ping();
-        std::optional<std::string> ExtractResult(const boost::system::result<boost::redis::resp3::node, boost::redis::adapter::error>& result,
+        // 结果解析
+        [[nodiscard]] std::optional<std::string> ExtractResult(const boost::system::result<boost::redis::resp3::node, boost::redis::adapter::error>& result,
             const std::string& command_name, const std::string& key_context= "") const;
 
         const std::shared_ptr<boost::asio::io_context> ioc_;

@@ -12,6 +12,7 @@
     "cryptopp",
     "bext-di",
     "jwt-cpp",
-    "spdlog"
+    "spdlog",
+    "yaml-cpp"
   ]
 }

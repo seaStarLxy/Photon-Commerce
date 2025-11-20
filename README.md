@@ -32,8 +32,9 @@
 8. boost di 管理依赖注入实现控制反转
 9. CallData 封装（3层继承&模版&内存极致优化&安全控制&CRTP&概念约束）
 10. 对象池(Manager模版)复用CallData
-11. 封装 grpc 客户端调用为协程
-12. saga模式: 保证微服务事务
+11. main 优化
+12. 封装 grpc 客户端调用为协程
+13. saga模式: 保证微服务事务
 
 待定事件（未提上日程）：对象池的动态伸缩（无锁队列）
 
@@ -48,10 +49,12 @@
 |   libpq    |    提供数据库同步接口    | postgresql 数据库 |
 | moodycamel |     提供无锁队列      |     暂时未启用      |
 |   spdlog   |      日志管理       |                |
-|   bcrypt   |      密码加密       |                |
+|  cryptopp  |      密码加密       |                |
 |  uuid_v7   |     唯一id管理      |                |
 |  boost_di  |     提供依赖注入      |                |
 |  jwt-cpp   |     提供jwt认证     |                |
+|  yaml-cpp  |     管理配置文件      |                |
+
 
 ### 数据库连接
 

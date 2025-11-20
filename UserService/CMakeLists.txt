@@ -13,8 +13,8 @@ find_package(OpenSSL REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
 find_package(jwt-cpp CONFIG REQUIRED)
 find_package(cryptopp REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
 
@@ -55,8 +55,8 @@ protobuf_generate(
         TARGET my_proto_lib
         LANGUAGE grpc
         IMPORT_DIRS
-            "${GOOGLEAPIS_PROTOS_DIR}"
-            "${MY_IDL_DIR}"
+        "${GOOGLEAPIS_PROTOS_DIR}"
+        "${MY_IDL_DIR}"
         PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
         GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
         PLUGIN "protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
@@ -66,16 +66,17 @@ protobuf_generate(
 # 收集源文件
 set(SERVER_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/server/user_service_server.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/server/application.cc"
 )
 
 set(ADAPTER_FILES
-#        v1
-#        "adapter/v1/src/register_call_data.cc"
-#         v2
-        "adapter/v2/call_data_manager/src/register_call_data_manager.cc"
-        "adapter/v2/call_data/src/register_call_data.cc"
-        "adapter/v2/call_data_manager/src/send_code_call_data_manager.cc"
-        "adapter/v2/call_data/src/send_code_call_data.cc"
+        #        v1
+        #        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v1/src/register_call_data.cc"
+        #         v2
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/register_call_data_manager.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/register_call_data.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/send_code_call_data_manager.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/send_code_call_data.cc"
 )
 
 set(SERVICE_FILES
@@ -84,7 +85,7 @@ set(SERVICE_FILES
 )
 
 set(DOMAIN_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/domain/user.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/domain/user.cc"
 )
 
 set(INFRASTRUCTURE_FILES
@@ -105,6 +106,14 @@ set(UTILS_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/verification_code_generator.cc"
 )
 
+set(CONFIG_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/config/app_config.cc"
+)
+
+set(BUILTIN_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/builtin_impl/builtin_impl.cc"
+)
+
 # 添加主程序可执行文件
 add_executable(UserServiceServer
         main.cc
@@ -114,6 +123,26 @@ add_executable(UserServiceServer
         ${DOMAIN_FILES}
         ${INFRASTRUCTURE_FILES}
         ${UTILS_FILES}
+        ${CONFIG_FILES}
+        ${BUILTIN_FILES}
+)
+
+# 添加预编译头文件 PCH
+target_precompile_headers(UserServiceServer PRIVATE
+        # --- 标准库 ---
+        <memory>
+        <string>
+        <vector>
+        <future>
+
+        # --- 巨型第三方库 (加速编译) ---
+        <boost/di.hpp>
+        <boost/asio.hpp>
+        <spdlog/spdlog.h>
+        <grpcpp/grpcpp.h>
+        <jwt-cpp/jwt.h>
+        <stduuid/uuid.h>
+        <boost/redis.hpp>
 )
 
 # 添加头文件包含目录
@@ -132,4 +161,8 @@ target_link_libraries(UserServiceServer PUBLIC
         jwt-cpp::jwt-cpp
         spdlog::spdlog
         stduuid
+        yaml-cpp::yaml-cpp
 )
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/config.yaml
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/config)
