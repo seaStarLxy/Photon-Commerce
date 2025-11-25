@@ -37,7 +37,7 @@
 ![System Architecture](docs/images/zh/system_architecture_zh.png)
 
 ### 2. CallData 异步状态机设计
-![CallData Design](docs/images/zh/calldata_design_zh.png)
+![CallData Design](docs/images/zh/grpc_async_workflow_zh.png)
 
 ---
 
@@ -171,6 +171,8 @@ envoy -c ./apiGateway/envoy.yaml -l info
     * 新功能: `git checkout -b feature/your-feature-name`
     * 修复 Bug: `git checkout -b bugfix/your-fix-name`
     * 重构: `git checkout -b refactor/your-refactor-name`
+    * 更新文档: `git checkout -b docs/update-readme`
+    * 构建/配置: `git checkout -b chore/update-cmake`
 3.  **提交代码**:
     ```bash
     git add .
