@@ -36,19 +36,37 @@ boost::asio::awaitable<void> PQConnection::AsyncConnect(const std::string &conn_
     }
 }
 
-boost::asio::awaitable<PGResultPtr> PQConnection::AsyncExecParams(const std::string &query,
+boost::asio::awaitable<std::expected<PGResultPtr, DbError>> PQConnection::AsyncExecParams(const std::string &query,
                                                                     const std::vector<std::string> &params) {
+    // 1. 发送
+    SendQuery(query, params);
+    // 2. 等待
+    co_await AwaitResponse();
+    // 3. 取值
+    auto raw_result = FetchRawResult();
+    // 4. 映射 (判断成功还是失败)
+    co_return MapResultToExpected(std::move(raw_result));
+}
+
+/* AsyncExecParams 子函数 */
+
+void PQConnection::SendQuery(const std::string &query, const std::vector<std::string> &params) {
     // 维护参数列表
     std::vector<const char *> param_values;
     param_values.reserve(params.size());
     for (const auto &p: params) {
         param_values.push_back(p.c_str());
     }
-    // 非阻塞查询
+
+    // 非阻塞查询 （严重错误）
     if (PQsendQueryParams(conn_.get(), query.c_str(), params.size(), nullptr,
                           param_values.data(), nullptr, nullptr, 0) == 0) {
+        // 严重错误（网络/OOM等）,当下阶段选择抛出异常
         throw std::runtime_error(std::string("Failed to send query: ") + PQerrorMessage(conn_.get()));
     }
+}
+
+boost::asio::awaitable<void> PQConnection::AwaitResponse() {
     while (true) {
         // 以协程方式监听数据库给出的反馈
         co_await socket_.async_wait(boost::asio::posix::stream_descriptor::wait_read, boost::asio::use_awaitable);
@@ -61,29 +79,52 @@ boost::asio::awaitable<PGResultPtr> PQConnection::AsyncExecParams(const std::str
             break;
         }
     }
+}
 
+PGResultPtr PQConnection::FetchRawResult() {
     // 处理返回结果
-    PGResultPtr result(nullptr, &PQclear);
+    PGResultPtr final_result(nullptr, &PQclear);
+    // 这里用循环是因为，保证把数据全取出来，只有第一次是有效数据，但是第二次必须把 nullptr 取出来，否则本次连接未结束，下次无法使用
     while (true) {
-        // 把结果从 pq的数据结构 中拷贝出来
-        result.reset(PQgetResult(conn_.get()));
-        // 有些操作可能有多个返回结果，所以需要使用 while循环 配合 result 检查
-        if (!result) {
-            // 如果结果为空指针，表示所有结果都已处理完毕
+        // 从pq底层结构拿一个结果
+        PGResultPtr temp_res(PQgetResult(conn_.get()), &PQclear);
+
+        // 结束信号：如果是 nullptr，说明连接空闲了，可以退出了
+        if (!temp_res) {
             break;
         }
-        ExecStatusType status = PQresultStatus(result.get());
-        // 检查 sql运行 是否错误
-        if (status == PGRES_BAD_RESPONSE || status == PGRES_FATAL_ERROR) {
-            // 拿到错误信息并抛出异常
-            throw std::runtime_error(std::string("SQL Error: ") + PQresultErrorMessage(result.get()));
-        }
-        // PGRES_TUPLES_OK 代表执行成功并返回了成功的结果，比如: select
-        // PGRES_COMMAND_OK 代表执行语句执行成功（没有返回结果的那种语句），比如: update、insert
-        if (status == PGRES_TUPLES_OK || status == PGRES_COMMAND_OK) {
-            co_return result; // 成功，返回结果
+        // 单语句查询，只有第一个结果就是我们要的
+        if (!final_result) {
+            final_result = std::move(temp_res);
         }
     }
-    // 循环结束还没有返回，很可能是出错了或没有返回结果集
-    co_return PGResultPtr(nullptr, &PQclear);
+    return final_result;
+}
+
+std::expected<PGResultPtr, DbError> PQConnection::MapResultToExpected(PGResultPtr result) {
+    // 防御性检查
+    if (!result) {
+        return PGResultPtr(nullptr, &PQclear);
+    }
+    const ExecStatusType status = PQresultStatus(result.get());
+
+    // 检查 sql 运行是否发生错误（约束错误等）
+    if (status == PGRES_BAD_RESPONSE || status == PGRES_FATAL_ERROR) {
+        // 获取错误信息
+        std::string err_msg = PQresultErrorMessage(result.get());
+        // 获取 SQLState （错误代码）
+        const char* sql_state_ptr = PQresultErrorField(result.get(), PG_DIAG_SQLSTATE);
+        std::string sql_state = sql_state_ptr ? sql_state_ptr : "";
+        SPDLOG_WARN("SQL Execution Failed. State: {}, Msg: {}", sql_state, err_msg);
+        // 返回错误对象
+        return std::unexpected(DbError{DbErrorType::SqlExecutionError, err_msg, sql_state});
+    }
+    // PGRES_TUPLES_OK 代表执行成功并返回了成功的结果，比如: select
+    // PGRES_COMMAND_OK 代表执行语句执行成功（没有返回结果的那种语句），比如: update、insert
+    if (status == PGRES_TUPLES_OK || status == PGRES_COMMAND_OK) {
+        return result; // 成功，返回结果
+    }
+
+    // 其他状态返回空结果集
+    return PGResultPtr(nullptr, &PQclear);
 }

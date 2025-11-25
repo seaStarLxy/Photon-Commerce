@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(UserService LANGUAGES CXX)
 
-# 注意协程需要 C20 标准以上
-set(CMAKE_CXX_STANDARD 20)
+# 注意协程需要 C23 标准以上
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(gRPC REQUIRED)

@@ -171,8 +171,9 @@ envoy -c ./apiGateway/envoy.yaml -l info
     * 新功能: `git checkout -b feature/your-feature-name`
     * 修复 Bug: `git checkout -b bugfix/your-fix-name`
     * 重构: `git checkout -b refactor/your-refactor-name`
+    * 性能优化: `git checkout -b perf/optimize-connection-pool`
     * 更新文档: `git checkout -b docs/update-readme`
-    * 构建/配置: `git checkout -b chore/update-cmake`
+    * 修改构建/配置: `git checkout -b chore/update-cmake`
 3.  **提交代码**:
     ```bash
     git add .

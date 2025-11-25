@@ -39,6 +39,8 @@ boost::asio::awaitable<void> RedisClient::Set(const std::string& key, const std:
         co_await conn_->async_exec(req, boost::redis::ignore);
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Redis SET failed: {}. Key: {}, Value: {}", e.what(), key, value);
+        // 当下阶段选择抛出，这时候可能 redis 挂了，需要执行降级策略了
+        throw;
     }
 }
 
@@ -52,6 +54,7 @@ boost::asio::awaitable<void> RedisClient::Set(const std::string& key, const std:
         co_await conn_->async_exec(req, boost::redis::ignore);
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Redis SETEX failed: {}. Key: {}, Value: {}, Expiry: {}", e.what(), key, value, expiry.count());
+        throw;
     }
 }
 
@@ -109,7 +112,7 @@ std::optional<std::string> RedisClient::ExtractResult(const boost::system::resul
 
     const auto& node = result.value();
 
-    // B. 检查是否是字符串 (Blob String 或 Simple String)
+    // B. 检查是否是字符串 (Blob String 或 Simple String)，这是 Happy Path
     // 注意：PONG 是 simple_string，GET 的值通常是 blob_string
     if (node.data_type == boost::redis::resp3::type::blob_string || node.data_type == boost::redis::resp3::type::simple_string) {
         return node.value;
