@@ -11,5 +11,5 @@ postgresql:
   port: 5432
   user: "lxy"
   password: "12345678"
-  dbname: "postgres"
+  dbname: "ecommerce_db"
   pool_size: 4

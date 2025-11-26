@@ -110,7 +110,7 @@ namespace user_service::adapter::v2 {
                 SPDLOG_DEBUG("Coroutine finished successfully");
                 status = grpc::Status::OK;
             }
-            // 调用 Finish 就是把自己放回 CQ
+            // 调用 Finish 就是让 grpc 发送回复，grpc发送完会把当前 CallData 放回 CQ
             responder_.Finish(reply_, status, this);
         }
     private:

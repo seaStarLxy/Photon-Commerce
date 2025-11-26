@@ -12,6 +12,7 @@ namespace user_service::service {
         // 通用错误
         INTERNAL_ERROR = 1000,
         INVALID_ARGUMENT = 1001,
+        UNAUTHORIZED = 1002,
 
         // 用户相关错误 (2000+)
         USER_NOT_FOUND = 2001,

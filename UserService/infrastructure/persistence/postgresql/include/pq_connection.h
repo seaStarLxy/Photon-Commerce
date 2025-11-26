@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #pragma once
+#include "infrastructure/persistence/postgresql/include/db_error.h"
 #include <libpq-fe.h>
 #include <boost/asio.hpp>
 #include <string>
@@ -10,15 +11,6 @@
 #include <expected>
 
 namespace user_service::infrastructure {
-    enum class DbErrorType {
-        NetworkError,
-        SqlExecutionError,  // 执行时错误
-    };
-    struct DbError {
-        DbErrorType type;
-        std::string pg_error_message;
-        std::string sql_state;  // PGSQL 的错误代码，比如 "23505" 代表唯一键冲突
-    };
 
     using PGResultPtr = std::unique_ptr<PGresult, decltype(&PQclear)>;
 

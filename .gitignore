@@ -1,2 +1,5 @@
 # clion IDE directory
 .idea/
+
+# 调试文件
+project_context.txt

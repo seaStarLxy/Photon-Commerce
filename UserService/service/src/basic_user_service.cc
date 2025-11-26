@@ -20,9 +20,9 @@ boost::asio::awaitable<RegisterResponse> BasicUserService::Register(const Regist
 }
 
 boost::asio::awaitable<GetUserInfoResponse> BasicUserService::GetUserInfo(const GetUserInfoRequest&) {
-
+    co_return GetUserInfoResponse{CommonStatus(ErrorCode::INTERNAL_ERROR, "Not Implemented Yet")};
 }
 
 boost::asio::awaitable<UpdateUserInfoResponse> BasicUserService::UpdateUserInfo(const UpdateUserInfoRequest&) {
-
+    co_return UpdateUserInfoResponse{CommonStatus(ErrorCode::INTERNAL_ERROR, "Not Implemented Yet")};
 }
