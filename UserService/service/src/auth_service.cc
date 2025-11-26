@@ -20,38 +20,49 @@ AuthService::~AuthService() = default;
 
 boost::asio::awaitable<SendCodeResponse> AuthService::SendCode(const SendCodeRequest& send_code_request)
 {
-    // 1. 查询用户是否存在
-    bool user_exists = false;
-    // 2. 根据验证码用途进行逻辑校验
+    // 标记是否需要真正执行发送逻辑
+    bool should_send_code = true;
+
     switch (send_code_request.usage)
     {
-    case USER_REGISTER:
-        if (user_exists)
+        case USER_REGISTER:
+            // 注册场景下不做任何检查，直接发
+            should_send_code = true;
+            break;
+        case USER_LOGIN:
+        case RESET_PASSWORD:
         {
-            SPDLOG_WARN("Registration failed: User {} already exists", send_code_request.phone_number);
-            co_return SendCodeResponse(CommonStatus(ErrorCode::USER_NOT_FOUND, "该手机号已注册"));
+            auto user_result_exp = co_await user_repository_->GetUserByPhoneNumber(send_code_request.phone_number);
+            // 系统级错误
+            if (!user_result_exp.has_value()) {
+                const auto& db_err = user_result_exp.error();
+                SPDLOG_ERROR("DB Error in SendCode: {}", db_err.pg_error_message);
+                co_return SendCodeResponse(CommonStatus(ErrorCode::INTERNAL_ERROR, "系统内部错误"));
+            }
+            // 业务级检查
+            const auto& user_opt = user_result_exp.value();
+            if (!user_opt.has_value()) {
+                // 用户不存在则沉默处理，防止枚举攻击
+                SPDLOG_INFO("Security: Suppressed SendCode request for non-existent user: {}", send_code_request.phone_number);
+                should_send_code = false;
+            } else {
+                should_send_code = true;
+            }
+            break;
         }
-        break;
-    case USER_LOGIN:
-        if (!user_exists)
-        {
-            co_return SendCodeResponse(CommonStatus(ErrorCode::USER_NOT_FOUND, "该手机号尚未注册"));
-        }
-        break;
-    case RESET_PASSWORD:
-        if (!user_exists)
-        {
-            co_return SendCodeResponse(CommonStatus(ErrorCode::USER_NOT_FOUND, "该手机号尚未注册"));
-        }
-        break;
-    default:
-        co_return SendCodeResponse(CommonStatus(ErrorCode::INVALID_ARGUMENT, "发送验证码用途不明"));
+        default:
+            co_return SendCodeResponse(CommonStatus(ErrorCode::INVALID_ARGUMENT, "发送验证码用途不明"));
     }
-    // 3. 生成验证码
+
+    // 判断是否需要真发
+    if (!should_send_code) {
+        co_return SendCodeResponse(CommonStatus::Success());
+    }
+    // 生成验证码
     std::string code = verification_code_generator_->Generate(6);
-    // 4. 模拟发送验证码
+    // 模拟发送验证码
     SPDLOG_DEBUG("send code {} to {}", code, send_code_request.phone_number);
-    // 5. 存到 redis
+    // 存到 redis
     const auto expiry = std::chrono::minutes(5); // TTL: 5分钟
     co_await verification_code_repository_->SaveCode(send_code_request.usage,
                                                      send_code_request.phone_number, code, expiry);
@@ -60,11 +71,11 @@ boost::asio::awaitable<SendCodeResponse> AuthService::SendCode(const SendCodeReq
     co_return SendCodeResponse(CommonStatus::Success());
 }
 
-boost::asio::awaitable<LoginResult> AuthService::LoginByCode(const LoginByCodeRequest& login_by_code_request)
-{
+boost::asio::awaitable<LoginResult> AuthService::LoginByCode(const LoginByCodeRequest& login_by_code_request) {
+    co_return LoginResult{CommonStatus(ErrorCode::INTERNAL_ERROR, "Not Implemented Yet")};
 }
 
 boost::asio::awaitable<LoginResult> AuthService::LoginByPassword(
-    const LoginByPasswordRequest& login_by_password_request)
-{
+    const LoginByPasswordRequest& login_by_password_request) {
+    co_return LoginResult{CommonStatus(ErrorCode::INTERNAL_ERROR, "Not Implemented Yet")};
 }

@@ -33,11 +33,14 @@
 
 ## 📐 系统架构与核心设计
 
-### 1. 总体架构图
+### 1. 后端服务全链路系统架构图 (Envoy + gRPC + PostgreSQL)
 ![System Architecture](docs/images/zh/system_architecture_zh.png)
 
-### 2. CallData 异步状态机设计
-![CallData Design](docs/images/zh/grpc_async_workflow_zh.png)
+### 2. 双线程池协作的异步 I/O 处理流程详解
+![gRPC Async Design](docs/images/zh/grpc_async_workflow_zh.png)
+
+### 3. CallData 模版类实现与请求处理状态流转图
+![CallData Design](docs/images/zh/CallData_impl_zh.png)
 
 ---
 
@@ -184,6 +187,19 @@ envoy -c ./apiGateway/envoy.yaml -l info
     git push -u origin feature/your-feature-name
     # 随后在 GitHub 发起 Pull Request (PR) 并等待 CI 检查通过
     ```
+### ⚠️ 编译器兼容性与已知问题
+本项目深度使用了 **C++20/23 协程** 与 **`std::expected`** 错误处理机制。在开发过程中发现，某些版本的 **GCC (尤其是 GCC 13)** 在处理协程返回值隐式转换时存在内部缺陷 (Internal Compiler Error, ICE)。
+
+#### 🔴 GCC "Internal Compiler Error" 问题
+若在编译时遇到类似以下的崩溃错误：
+```text
+internal compiler error: in build_special_member_call, at cp/call.cc:11096
+```
+这通常是因为在 co_return 语句中进行了多层隐式类型转换（例如：User -> std::optional<User> -> std::expected<...>)，或是将临时对象绑定到了协程的引用参数上。
+#### ✅ 解决方案：
+1. 避免隐式转换：在 co_return 前，显式构造好最终的返回对象。
+2. 避免临时变量绑定引用：调用 co_await 函数时，避免在参数列表中直接创建临时对象（如 std::string 或 std::vector），应提前定义局部变量。
+
 
 ---
 
