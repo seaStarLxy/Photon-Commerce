@@ -116,7 +116,7 @@ message RegisterResponse {
 }
 
 message GetUserInfoRequest {
-  string user_id = 1;
+//  string user_id = 1;
 }
 message GetUserInfoResponse {
   CommonStatus status = 1;

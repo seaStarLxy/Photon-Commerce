@@ -44,7 +44,9 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Set(const s
         boost::redis::request req;
         req.push("SET", key, value);
 
-        co_await conn_->async_exec(req, boost::redis::ignore);
+        // 进入串行区
+        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
+        co_await conn_->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
 
         co_return std::expected<void, RedisError>();
     } catch (const std::exception& e) {
@@ -67,7 +69,11 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Set(const s
         } else {
             req.push("SET", key, value);
         }
-        co_await conn_->async_exec(req, boost::redis::ignore);
+
+        // 进入串行区
+        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
+        co_await conn_->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
+
         co_return std::expected<void, RedisError>();
     } catch (const std::exception& e) {
         // 与 redis 断开连接
@@ -86,7 +92,10 @@ boost::asio::awaitable<std::expected<std::optional<std::string>, RedisError>> Re
         req.push("GET", key);
 
         boost::redis::response<boost::redis::resp3::node> resp;
-        co_await conn_->async_exec(req, resp);
+
+        // 进入串行区
+        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
+        co_await conn_->async_exec(req, resp, boost::asio::use_awaitable);
 
         co_return ExtractResult(std::get<0>(resp), "GET", key);
     } catch (const std::exception& e) {
@@ -106,7 +115,9 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Ping() cons
 
         boost::redis::response<boost::redis::resp3::node> resp;
 
-        co_await conn_->async_exec(req, resp);
+        // 进入串行区
+        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
+        co_await conn_->async_exec(req, resp, boost::asio::use_awaitable);
 
         auto result = ExtractResult(std::get<0>(resp), "PING", "Init");
 
@@ -139,7 +150,7 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Ping() cons
 
 std::expected<std::optional<std::string>, RedisError> RedisClient::ExtractResult(
     const boost::system::result<boost::redis::resp3::node, boost::redis::adapter::error>& result,
-    const std::string& command_name, const std::string& key_context) const {
+    const std::string& command_name, const std::string& key_context) {
 
     // A: 系统级错误 (System Error)
     if (result.has_error()) {

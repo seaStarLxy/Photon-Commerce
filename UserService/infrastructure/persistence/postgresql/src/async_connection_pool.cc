@@ -57,7 +57,7 @@ void AsyncConnectionPool::ReturnConnection(const std::shared_ptr<PQConnection>& 
 }
 
 // 实现 Deleter
-inline void ConnectionReleaser::operator()(PQConnection *conn) const {
+void ConnectionReleaser::operator()(PQConnection *conn) const {
     // weak_ptr 若观察对象不存在会返回 shared_ptr 包裹一个nullptr
     if (auto pool_sh_ptr = pool.lock()) {
         pool_sh_ptr->ReturnConnection(conn_sh_ptr);
