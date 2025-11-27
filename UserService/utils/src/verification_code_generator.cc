@@ -1,7 +1,7 @@
 // Copyright (c) 2025 seaStarLxy.
 // Licensed under the MIT License.
 
-#include "../include/verification_code_generator.h"
+#include "utils/include/verification_code_generator.h"
 
 using namespace user_service::util;
 

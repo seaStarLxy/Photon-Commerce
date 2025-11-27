@@ -1,4 +1,4 @@
-# config.yaml
+# config.yaml 数据未脱敏
 server:
   port: 50051
 
@@ -13,3 +13,8 @@ postgresql:
   password: "12345678"
   dbname: "ecommerce_db"
   pool_size: 4
+
+jwt:
+  secret_key: "photon-commerce-secret-key-2025"
+  issuer: "photon-commerce"
+  expiration_seconds: 86400

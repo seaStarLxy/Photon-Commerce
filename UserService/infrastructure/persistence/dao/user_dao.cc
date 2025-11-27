@@ -13,6 +13,54 @@ UserDao::UserDao(const std::shared_ptr<AsyncConnectionPool>& pool): pool_(pool) 
 
 UserDao::~UserDao() = default;
 
+boost::asio::awaitable<std::expected<void, DbError>> UserDao::CreateUser(const User& user) const {
+    const auto conn = co_await pool_->GetConnection();
+
+    const std::string sql = "INSERT INTO users (id, phone_number, username, email, password_hash, salt, avatar_url, status) "
+                            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+
+    const std::vector<std::string> params = {
+        user.GetId(),
+        user.GetPhoneNumber(),
+        user.GetUsername().value_or(""),
+        user.GetEmail().value_or(""),
+        user.GetPasswordHash(),
+        user.GetSalt(),
+        user.GetAvatarUrl().value_or(""),
+        std::to_string(user.GetStatusValue())
+    };
+
+    const auto result_exp = co_await conn->AsyncExecParams(sql, params);
+
+    if (!result_exp.has_value()) {
+        co_return std::unexpected(result_exp.error());
+    }
+    co_return std::expected<void, DbError>{};
+}
+
+boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserDao::GetUserById(const std::string& id) {
+    SPDLOG_DEBUG("{}", id);
+    const auto conn = co_await pool_->GetConnection();
+
+    const std::string sql = "SELECT id, phone_number, username, email, password_hash, salt, avatar_url, status, created_at "
+                            "FROM users WHERE id = $1 AND deleted_at IS NULL LIMIT 1";
+    const std::vector<std::string> params = { id };
+
+    auto result_exp = co_await conn->AsyncExecParams(sql, params);
+
+    if (!result_exp.has_value()) {
+        co_return std::unexpected(result_exp.error());
+    }
+
+    const auto result_ptr = std::move(result_exp.value());
+
+    if (PQntuples(result_ptr.get()) == 0) {
+        co_return std::nullopt;
+    }
+
+    co_return MapRowToUser(result_ptr.get(), 0);
+}
+
 boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserDao::GetUserByPhoneNumber(const std::string& phone_number) {
     const auto conn = co_await pool_->GetConnection();
     const std::string sql = "SELECT id, phone_number, username, email, password_hash, salt, avatar_url, status, created_at "
@@ -42,6 +90,7 @@ boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserDao::Get
     std::expected<std::optional<User>, DbError> ret = std::move(opt_user);
     co_return ret;
 }
+
 
 User UserDao::MapRowToUser(const PGresult* res, int row) {
     User user;

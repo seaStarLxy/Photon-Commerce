@@ -31,7 +31,7 @@ static_resources:
 
                       # --------------------------------------------------
                       # 指定的 proto.pb 文件路径
-                      proto_descriptor: "/home/ubuntu/ECommerceSystem-Microservices/apiGateway/proto.pb"
+                      proto_descriptor: "/home/ubuntu/Photon-Commerce/apiGateway/proto.pb"
                       # --------------------------------------------------
 
                       services: ["user_service.proto.v1.UserService", "user_service.proto.v1.AuthService"]

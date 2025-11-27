@@ -77,6 +77,12 @@ set(ADAPTER_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/register_call_data.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/send_code_call_data_manager.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/send_code_call_data.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/login_by_password_call_data_manager.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/login_by_password_call_data.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/login_by_code_call_data_manager.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/login_by_code_call_data.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data_manager/src/get_user_info_call_data_manager.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/adapter/v2/call_data/src/get_user_info_call_data.cc"
 )
 
 set(SERVICE_FILES
@@ -104,6 +110,9 @@ set(INFRASTRUCTURE_FILES
 
 set(UTILS_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/verification_code_generator.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/id_generator.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/jwt_util.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/src/security_util.cc"
 )
 
 set(CONFIG_FILES
@@ -140,7 +149,7 @@ target_precompile_headers(UserServiceServer PRIVATE
         <boost/asio.hpp>
         <spdlog/spdlog.h>
         <grpcpp/grpcpp.h>
-        <jwt-cpp/jwt.h>
+#        <jwt-cpp/jwt.h>
         <stduuid/uuid.h>
         <boost/redis.hpp>
 )
@@ -162,6 +171,7 @@ target_link_libraries(UserServiceServer PUBLIC
         spdlog::spdlog
         stduuid
         yaml-cpp::yaml-cpp
+#        nlohmann_json::nlohmann_json
 )
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/config.yaml

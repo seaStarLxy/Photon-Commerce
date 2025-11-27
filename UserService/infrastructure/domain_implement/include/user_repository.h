@@ -10,6 +10,8 @@ namespace user_service::infrastructure {
     public:
         explicit UserRepository(const std::shared_ptr<UserDao>& user_dao);
         ~UserRepository() override;
+        boost::asio::awaitable<std::expected<void, DbError>> CreateUser(const domain::User& user) override;
+        boost::asio::awaitable<std::expected<std::optional<domain::User>, DbError>> GetUserById(const std::string& id) override;
         boost::asio::awaitable<std::expected<std::optional<domain::User>, DbError>> GetUserByPhoneNumber(const std::string& phoneNumber) override;
     private:
         const std::shared_ptr<UserDao> user_dao_;

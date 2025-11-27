@@ -9,8 +9,13 @@
 #include "adapter/v2/call_data/include/register_call_data.h"
 #include "adapter/v2/call_data_manager/include/send_code_call_data_manager.h"
 #include "adapter/v2/call_data/include/send_code_call_data.h"
+#include "adapter/v2/call_data_manager/include/login_by_password_call_data_manager.h"
+#include "adapter/v2/call_data/include/login_by_password_call_data.h"
+#include "adapter/v2/call_data_manager/include/login_by_code_call_data_manager.h"
+#include "adapter/v2/call_data/include/login_by_code_call_data.h"
+#include "adapter/v2/call_data_manager/include/get_user_info_call_data_manager.h"
+#include "adapter/v2/call_data/include/get_user_info_call_data.h"
 
-// #include "adapter/v2/call_data/interface/call_data.hpp"
 
 using namespace user_service::server;
 using namespace user_service::adapter::v2;
@@ -38,11 +43,25 @@ void UserServiceServer::Run() {
 
     // 原始播种法
     // (new RegisterCallData(&service_, cq_.get(), *ioc_, basic_service_))->Init();
-    SPDLOG_DEBUG("Seeded RegisterCallData.");
+    // SPDLOG_DEBUG("Seeded RegisterCallData.");
+
+    /* 模版播种法 */
+    SPDLOG_DEBUG("Seeded Template CallData.");
+    // 注册
     RegisterCallDataManager register_manager = RegisterCallDataManager(100, &basic_user_grpc_service_, basic_user_business_service_.get(), ioc_, cq_.get());
     register_manager.Start();
+    // 发送验证码
     SendCodeCallDataManager send_code_manager = SendCodeCallDataManager(100, &auth_grpc_service_, auth_business_service_.get(), ioc_, cq_.get());
     send_code_manager.Start();
+    // 密码登录
+    LoginByPasswordCallDataManager login_pw_manager(100, &auth_grpc_service_, auth_business_service_.get(), ioc_, cq_.get());
+    login_pw_manager.Start();
+    // 验证码登录
+    LoginByCodeCallDataManager login_code_manager(100, &auth_grpc_service_, auth_business_service_.get(), ioc_, cq_.get());
+    login_code_manager.Start();
+    // 获取用户信息
+    GetUserInfoCallDataManager get_user_info_manager(100, &basic_user_grpc_service_, basic_user_business_service_.get(), ioc_, cq_.get());
+    get_user_info_manager.Start();
 
 
     // 启动 Worker 线程池

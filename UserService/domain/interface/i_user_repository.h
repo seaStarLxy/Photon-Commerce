@@ -14,6 +14,8 @@ namespace user_service::domain
     {
     public:
         virtual ~IUserRepository() = default;
+        virtual boost::asio::awaitable<std::expected<void, infrastructure::DbError>> CreateUser(const User& user) = 0;
+        virtual boost::asio::awaitable<std::expected<std::optional<User>, infrastructure::DbError>> GetUserById(const std::string& id) = 0;
         virtual boost::asio::awaitable<std::expected<std::optional<User>, infrastructure::DbError>> GetUserByPhoneNumber(const std::string& phoneNumber) = 0;
     };
 }

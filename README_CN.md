@@ -88,6 +88,7 @@ git submodule update --init --recursive
 
 ### 2. 环境依赖安装
 # 本项目推荐使用 Ubuntu 24.04 环境。
+```
 
 #### 基础工具链
 ```bash
@@ -134,7 +135,7 @@ envoy --version
 # 2. 生成 proto.pb (供 Envoy 进行协议转换使用)
 # 注意：路径需根据实际环境调整
 # 假设当前位于项目根目录
-./vcpkg_installed/x64-linux/tools/protobuf/protoc \
+./UserService/cmake-build-debug/vcpkg_installed/x64-linux/tools/protobuf/protoc \
   -I ./IDL \
   -I ./third_party/googleapis \
   --include_imports \

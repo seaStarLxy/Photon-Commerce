@@ -12,6 +12,7 @@ AppConfig::AppConfig(const std::string& config_path) {
         const YAML::Node root_node = YAML::LoadFile(config_path);
         ParseRedisConfig(root_node);
         ParseDbConfig(root_node);
+        ParseJwtConfig(root_node);
     } catch (const YAML::Exception& e) {
         SPDLOG_CRITICAL("Error parsing YAML file '{}': {}", config_path, e.what());
         throw std::runtime_error("Configuration load failed");
@@ -19,14 +20,6 @@ AppConfig::AppConfig(const std::string& config_path) {
         SPDLOG_CRITICAL("Configuration error: {}", e.what());
         throw;
     }
-}
-
-RedisConfig AppConfig::GetRedisConfig() const {
-    return redis_config;
-}
-
-DbPoolConfig AppConfig::GetDBPoolConfig() const {
-    return db_pool_config;
 }
 
 void AppConfig::ParseRedisConfig(const YAML::Node& root_node) {
@@ -45,9 +38,9 @@ void AppConfig::ParseRedisConfig(const YAML::Node& root_node) {
     ValidatePort(port, "Redis Port");
 
     // 赋值
-    redis_config.host = host;
-    redis_config.port = std::to_string(port); // RedisConfig 里依然存的是 string
-    SPDLOG_INFO("Redis config loaded: {}:{}", redis_config.host, redis_config.port);
+    redis_config_.host = host;
+    redis_config_.port = std::to_string(port); // RedisConfig 里依然存的是 string
+    SPDLOG_INFO("Redis config loaded: {}:{}", redis_config_.host, redis_config_.port);
 }
 
 void AppConfig::ParseDbConfig(const YAML::Node& root_node) {
@@ -75,10 +68,31 @@ void AppConfig::ParseDbConfig(const YAML::Node& root_node) {
     }
 
     // 赋值
-    db_pool_config.conn_str = fmt::format("postgresql://{}:{}@{}:{}/{}",
+    db_pool_config_.conn_str = fmt::format("postgresql://{}:{}@{}:{}/{}",
                                           user, pwd, host, port, dbname);
-    db_pool_config.pool_size = pool_size;
-    SPDLOG_INFO("Database config loaded. Host: {}, PoolSize: {}", host, db_pool_config.pool_size);
+    db_pool_config_.pool_size = pool_size;
+    SPDLOG_INFO("Database config loaded. Host: {}, PoolSize: {}", host, db_pool_config_.pool_size);
+}
+
+void AppConfig::ParseJwtConfig(const YAML::Node& root_node) {
+    if (!root_node["jwt"]) {
+        throw std::runtime_error("Missing 'jwt' section");
+    }
+    const auto& node = root_node["jwt"];
+
+    const std::string secret = node["secret_key"].as<std::string>();
+    const std::string issuer = node["issuer"].as<std::string>();
+    const int expire = node["expiration_seconds"].as<int>();
+
+    ValidateNotEmpty(secret, "JWT Secret Key");
+    ValidateNotEmpty(issuer, "JWT Issuer");
+
+    if (expire <= 0) {
+        throw std::runtime_error("Config Error: JWT expiration_seconds must be positive");
+    }
+
+    jwt_config_ = {secret, issuer, expire};
+    SPDLOG_INFO("JWT config loaded. Issuer: {}", issuer);
 }
 
 void AppConfig::ValidatePort(int port, const std::string& field_name) const {

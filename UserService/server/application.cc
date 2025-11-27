@@ -18,6 +18,9 @@
 #include "infrastructure/domain_implement/include/user_repository.h"
 
 #include "utils/include/verification_code_generator.h"
+#include "utils/include/id_generator.h"
+#include "utils/include/security_util.h"
+#include "utils/include/jwt_util.h"
 
 #include "config/app_config.h"
 
@@ -39,6 +42,7 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
     const auto app_config = AppConfig(config_path_);
     const auto redis_config = app_config.GetRedisConfig();
     const auto db_pool_config = app_config.GetDBPoolConfig();
+    const auto jwt_config = app_config.GetJwtConfig();
 
     /*
      * bind<T> 要什么，传入T，可以自动解析构造函数中的 T T* T智能指针等等
@@ -56,6 +60,10 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
         di::bind<RedisConfig>().to(redis_config),
         di::bind<RedisClient>().in(di::singleton),
         di::bind<IVerificationCodeGenerator>().to<CodeGenerator>().in(di::singleton),
+        di::bind<IIDGenerator>().to<IdGenerator>().in(di::singleton),
+        di::bind<ISecurityUtil>().to<SecurityUtil>().in(di::singleton),
+        di::bind<JwtConfig>().to(jwt_config),
+        di::bind<IJwtUtil>().to<JwtUtil>().in(di::singleton),
         di::bind<IVerificationCodeRepository>().to<VerificationCodeRepository>().in(di::singleton),
         di::bind<IUserRepository>().to<UserRepository>().in(di::singleton),
         di::bind<IAuthService>().to<AuthService>().in(di::singleton),

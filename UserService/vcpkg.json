@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-  "name": "ecommerce-system",
+  "name": "photon-commerce",
   "version-string": "0.1.0",
   "dependencies": [
     "grpc",
@@ -11,8 +11,9 @@
     "stduuid",
     "cryptopp",
     "bext-di",
-    "jwt-cpp",
     "spdlog",
-    "yaml-cpp"
+    "yaml-cpp",
+    "jwt-cpp",
+    "picojson"
   ]
 }

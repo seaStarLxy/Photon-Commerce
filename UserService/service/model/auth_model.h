@@ -23,7 +23,7 @@ namespace user_service::service {
 
     // 密码登录
     struct LoginByPasswordRequest {
-        std::string username;
+        std::string user_id;
         std::string password;
     };
     // 验证码登录

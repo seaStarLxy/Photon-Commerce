@@ -12,6 +12,14 @@ UserRepository::UserRepository(const std::shared_ptr<UserDao>& user_dao): user_d
 
 UserRepository::~UserRepository() = default;
 
+boost::asio::awaitable<std::expected<void, DbError>> UserRepository::CreateUser(const User& user) {
+    co_return co_await user_dao_->CreateUser(user);
+}
+
+boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserRepository::GetUserById(const std::string& id) {
+    co_return co_await user_dao_->GetUserById(id);
+}
+
 boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserRepository::GetUserByPhoneNumber(const std::string& phoneNumber) {
     co_return co_await user_dao_->GetUserByPhoneNumber(phoneNumber);
 }

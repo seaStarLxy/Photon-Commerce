@@ -37,6 +37,17 @@ namespace user_service::domain {
 
         void MarkAsDeleted(); // 软删除
 
+        static User Create(std::string id, std::string phone, std::string pwd_hash, std::string salt) {
+            User u;
+            u.id_ = std::move(id);
+            u.phone_number_ = std::move(phone);
+            u.password_hash_ = std::move(pwd_hash);
+            u.salt_ = std::move(salt);
+            u.status_ = UserStatus::NORMAL;
+            // created_at 不需要设置，插入数据库时会自动生成
+            return u;
+        }
+
         // 只读
         [[nodiscard]] const std::string &GetId() const { return id_; }
         [[nodiscard]] const std::string &GetPhoneNumber() const { return phone_number_; }

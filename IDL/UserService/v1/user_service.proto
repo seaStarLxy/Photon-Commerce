@@ -91,7 +91,7 @@ message SendCodeResponse {
 }
 
 message LoginByPasswordRequest {
-  string username = 1;
+  string user_id = 1 [json_name = "user_id"];
   string password = 2;
 }
 message LoginByCodeRequest {
@@ -101,7 +101,6 @@ message LoginByCodeRequest {
 message LoginResponse {
   CommonStatus status = 1;
   string token = 2;
-  User user = 3;
 }
 
 // UserService 消息体
