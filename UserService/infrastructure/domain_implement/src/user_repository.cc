@@ -18,6 +18,19 @@ boost::asio::awaitable<std::expected<void, DbError>> UserRepository::CreateUser(
 }
 
 boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserRepository::GetUserById(const std::string& id) {
+    // mock 数据
+    // auto mock_user = user_service::domain::User::Create(
+    //     id,                                      // 使用参数 id，保持一致性
+    //     "+8613812345678",                        // 模拟手机号
+    //     "e10adc3949ba59abbe56e057f20f883e",      // 模拟 Password Hash (MD5/Argon2 string)
+    //     "random_salt_string_16bytes"             // 模拟 Salt
+    // );
+    // mock_user.UpdateProfile(
+    //     "Benchmark_User_Name",                   // username
+    //     "benchmark_user@nus.edu.sg",             // email
+    //     "https://oss.example.com/avatars/default.png" // avatar_url
+    // );
+    // co_return std::optional<user_service::domain::User>(std::move(mock_user));
     const std::string cache_key = "user:info:" + id;
 
     // 尝试读缓存
