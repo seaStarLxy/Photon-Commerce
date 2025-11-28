@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 #pragma once
-#include "pq_connection.h"
+#include "infrastructure/persistence/postgresql/include/pq_connection.h"
 #include <deque>
 #include <memory>
+#include <coroutine>
 #include <boost/asio/strand.hpp>
-#include <boost/asio/experimental/channel.hpp>
 
 namespace user_service::infrastructure {
     // 配置文件
@@ -37,28 +37,46 @@ namespace user_service::infrastructure {
 
         boost::asio::awaitable<void> Init();
 
-        // 核心接口：获取连接
+        // 获取连接 (Strand 串行执行)
         boost::asio::awaitable<PooledConnection> GetConnection();
 
     private:
         friend struct ConnectionReleaser;
+        // 归还连接 (Strand 串行执行)
         void ReturnConnection(const std::shared_ptr<PQConnection>& conn_sh_ptr);
 
 
-        using WaiterChannel = boost::asio::experimental::channel<void(boost::system::error_code, std::shared_ptr<PQConnection>)>;
+        // 用于维护被挂起的协程帧，以及需要被分配的连接
+        struct Waiter {
+            // 协程帧
+            std::coroutine_handle<> handle;
+            // 挂起时为空，恢复之前会需要填入连接
+            std::shared_ptr<PQConnection> assigned_conn;
+        };
 
+        /*
+         * 类中结构体声明：
+         * 用于自定义可等待对象，包括：
+         * 挂起状态检查: await_ready
+         * 如何挂起: await_suspend
+         * 如何恢复: await_resume
+         * 注意：一定要在 strand 串行区挂起，内部
+         */
+        struct WaitForConnectionAwaiter;
 
         const std::shared_ptr<boost::asio::io_context> ioc_;
         const std::string conn_str_;
         const int pool_size_;
 
-        // Strand 串行调度器
+        // Strand 调度器，用于串行执行：获取连接、归还连接
         boost::asio::strand<boost::asio::io_context::executor_type> strand_;
 
-        // 空闲连接池
+        // 空闲连接队列
         std::deque<std::shared_ptr<PQConnection>> pool_;
 
-        // 维护等待者队列 (利用 Channel 内部公平队列)
-        WaiterChannel waiters_channel_;
+        // 维护等待者队列
+        // 存储指向协程帧内部 Waiter 对象的指针
+        std::deque<Waiter*> waiters_;
+
     };
 }

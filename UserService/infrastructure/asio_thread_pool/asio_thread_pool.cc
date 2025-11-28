@@ -25,9 +25,9 @@ void AsioThreadPool::Run() {
     // 创建 work_guard，防止 ioc->run() 没有任务就立即退出
     work_guard_.emplace(boost::asio::make_work_guard(*ioc_));
 
-    // unsigned int thread_count = std::thread::hardware_concurrency();
-    // if (thread_count == 0) thread_count = 2; // 保底 2 个线程
-    unsigned int thread_count = 1;
+    unsigned int thread_count = std::thread::hardware_concurrency();
+    if (thread_count == 0) thread_count = 2; // 保底 2 个线程
+    // unsigned int thread_count = 1;
     asio_threads_.reserve(thread_count);
     for (unsigned i = 0; i < thread_count; ++i) {
         asio_threads_.emplace_back([ioc = ioc_]() {

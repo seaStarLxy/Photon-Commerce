@@ -8,8 +8,8 @@ using namespace user_service::server;
 namespace di = boost::di;
 
 void LogInit() {
-    spdlog::set_level(spdlog::level::trace);
-    // spdlog::set_level(spdlog::level::off);
+    // spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::off);
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%s:%# (%!)] %v");
 }
 

@@ -1,17 +1,49 @@
 // Copyright (c) 2025 seaStarLxy.
 // Licensed under the MIT License.
 
-#include "../include/async_connection_pool.h"
+#include "infrastructure/persistence/postgresql/old_version/v2/old_async_conn_pool.h"
+#include <spdlog/spdlog.h>
 
 using namespace user_service::infrastructure;
 
+// ==========================================
+// 协程核心：自定义 Awaiter 实现
+// ==========================================
+struct AsyncConnectionPool::WaitForConnectionAwaiter {
+    AsyncConnectionPool* pool_;
+    Waiter waiter_;
+
+    explicit WaitForConnectionAwaiter(AsyncConnectionPool* pool)
+        : pool_(pool), waiter_(nullptr, nullptr) {}
+
+    // 连接池为空时创建 Awaiter，一定需要挂起，直接返回 false
+    bool await_ready() const noexcept { return false; }
+
+    // 挂起逻辑（串行区无线程安全问题）
+    void await_suspend(std::coroutine_handle<> h) {
+        waiter_.handle = h;
+        // 加入到等待队列
+        pool_->waiters_.push_back(&waiter_);
+
+        // 函数返回后，协程成功挂起，Strand 去执行别的任务
+    }
+
+    // 恢复时的逻辑
+    std::shared_ptr<PQConnection> await_resume() const noexcept {
+        // ReturnConnection 把连接填进来后，协程才被唤醒
+        return waiter_.assigned_conn;
+    }
+};
+
+// ==========================================
+//  AsyncConnectionPool 实现
+// ==========================================
 
 AsyncConnectionPool::AsyncConnectionPool(const std::shared_ptr<boost::asio::io_context>& ioc, const DbPoolConfig& db_pool_config)
     : ioc_(ioc),
       conn_str_(db_pool_config.conn_str),
       pool_size_(db_pool_config.pool_size),
-      strand_(boost::asio::make_strand(*ioc)),
-      waiters_channel_(strand_, 0)
+      strand_(boost::asio::make_strand(*ioc))   // 初始化 Strand
 {
     if (pool_size_ <= 0) throw std::invalid_argument("Pool size must be positive.");
 }
@@ -38,8 +70,8 @@ boost::asio::awaitable<PooledConnection> AsyncConnectionPool::GetConnection() {
         conn = pool_.front();
         pool_.pop_front();
     } else {
-        // 把当前协程挂起并放入 Channel 的内部队列
-        conn = co_await waiters_channel_.async_receive(boost::asio::use_awaitable);
+        // 挂起排队
+        conn = co_await WaitForConnectionAwaiter{this};
     }
 
     // 无论是从池子拿的，还是别人用完了的，conn 都有值了
@@ -49,13 +81,18 @@ boost::asio::awaitable<PooledConnection> AsyncConnectionPool::GetConnection() {
 void AsyncConnectionPool::ReturnConnection(const std::shared_ptr<PQConnection>& conn_sh_ptr) {
     // 任务提交到 strand 串行区执行
     boost::asio::post(strand_, [this, conn = conn_sh_ptr]() mutable {
-        // 尝试直接发送给等待者
-        // try_send 检查 Channel 内部队列是否有挂起的协程
-        // 如果有，返回 true 并直接把 conn 塞给他唤醒；如果没有，返回 false
-        bool given_to_waiter = waiters_channel_.try_send(boost::system::error_code{}, conn);
+        if (!waiters_.empty()) {
+            // 从 waiter 池子中取出一个 waiter*
+            Waiter* waiter = waiters_.front();
+            waiters_.pop_front();
 
-        if (!given_to_waiter) {
-            // 没有挂起等待的协程了，放回池子
+            // 把连接交给 waiter
+            waiter->assigned_conn = conn;
+
+            // 唤醒 waiter (告诉他有连接可以用了)
+            waiter->handle.resume();
+        } else {
+            // 没有挂起等待的写成了，放回池子
             pool_.push_back(conn);
         }
     });

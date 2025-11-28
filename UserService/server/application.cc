@@ -78,7 +78,9 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
     SPDLOG_INFO("Application constructed.");
 }
 
-Application::~Application() = default;
+Application::~Application() {
+    thread_pool_->Stop();
+}
 
 void Application::Run() const {
     try {

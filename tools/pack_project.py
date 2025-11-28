@@ -11,7 +11,7 @@ TARGET_EXTENSIONS = {
 
 # 设定必须要忽略的目录（防止文件过大炸掉）
 IGNORE_DIRS = {
-    '.git', '.idea', 'cmake-build-debug', 'build', 'out', 'bin',
+    '.git', '.idea', 'cmake-build-debug', 'cmake-build-release', 'build', 'out', 'bin',
     'third_party', 'vcpkg_installed', 'external', '.vscode',
     '__pycache__', 'logs', 'generated'
 }
