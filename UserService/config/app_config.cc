@@ -23,40 +23,53 @@ AppConfig::AppConfig(const std::string& config_path) {
 }
 
 void AppConfig::ParseRedisConfig(const YAML::Node& root_node) {
-    // 读值
-    if (!root_node["redis"]) {
-        throw std::runtime_error("Missing 'redis' section");
-    }
+    // 一级节点检查
+    if (!root_node["redis"]) throw std::runtime_error("Missing 'redis' section");
     const auto& redis_node = root_node["redis"];
+    // 二级节点检查
+    if (!redis_node["host"]) throw std::runtime_error("Config Error: Missing 'redis.host'");
+    if (!redis_node["port"]) throw std::runtime_error("Config Error: Missing 'redis.port'");
+    if (!redis_node["pool_size"]) throw std::runtime_error("Config Error: Missing 'redis.pool_size'. Please update config.yaml");
 
     // 取值
-    std::string host = redis_node["host"].as<std::string>();
-    int port = redis_node["port"].as<int>();
+    const std::string host = redis_node["host"].as<std::string>();
+    const int port = redis_node["port"].as<int>();
+    const int pool_size = redis_node["pool_size"].as<int>();
 
     // 校验
     ValidateNotEmpty(host, "Redis Host");
     ValidatePort(port, "Redis Port");
+    if (pool_size <= 0 || pool_size > 1000) {
+        throw std::runtime_error(fmt::format("Config Error: Invalid Redis pool_size {}", pool_size));
+    }
 
     // 赋值
     redis_config_.host = host;
-    redis_config_.port = std::to_string(port); // RedisConfig 里依然存的是 string
-    SPDLOG_INFO("Redis config loaded: {}:{}", redis_config_.host, redis_config_.port);
+    redis_config_.port = std::to_string(port);
+    redis_config_.pool_size = pool_size;
+
+    SPDLOG_INFO("Redis config loaded: {}:{}, PoolSize: {}", redis_config_.host, redis_config_.port, pool_size);
 }
 
 void AppConfig::ParseDbConfig(const YAML::Node& root_node) {
-    // 读值
-    if (!root_node["postgresql"]) {
-        throw std::runtime_error("Missing 'postgresql' section");
-    }
+    // 一级节点检查
+    if (!root_node["postgresql"]) throw std::runtime_error("Missing 'postgresql' section");
     const auto& db_node = root_node["postgresql"];
+    // 二级节点检查
+    if (!db_node["host"]) throw std::runtime_error("Config Error: Missing 'postgresql.host'");
+    if (!db_node["port"]) throw std::runtime_error("Config Error: Missing 'postgresql.port'");
+    if (!db_node["user"]) throw std::runtime_error("Config Error: Missing 'postgresql.user'");
+    if (!db_node["password"]) throw std::runtime_error("Config Error: Missing 'postgresql.password'");
+    if (!db_node["dbname"]) throw std::runtime_error("Config Error: Missing 'postgresql.dbname'");
+    if (!db_node["pool_size"]) throw std::runtime_error("Config Error: Missing 'postgresql.pool_size'");
 
     // 取值
-    std::string host = db_node["host"].as<std::string>();
-    int port = db_node["port"].as<int>();
-    std::string user = db_node["user"].as<std::string>();
-    std::string pwd = db_node["password"].as<std::string>();
-    std::string dbname = db_node["dbname"].as<std::string>();
-    int pool_size = db_node["pool_size"].as<int>();
+    const std::string host = db_node["host"].as<std::string>();
+    const int port = db_node["port"].as<int>();
+    const std::string user = db_node["user"].as<std::string>();
+    const std::string pwd = db_node["password"].as<std::string>();
+    const std::string dbname = db_node["dbname"].as<std::string>();
+    const int pool_size = db_node["pool_size"].as<int>();
 
     // 校验
     ValidateNotEmpty(host, "DB Host");
@@ -75,27 +88,30 @@ void AppConfig::ParseDbConfig(const YAML::Node& root_node) {
 }
 
 void AppConfig::ParseJwtConfig(const YAML::Node& root_node) {
-    if (!root_node["jwt"]) {
-        throw std::runtime_error("Missing 'jwt' section");
-    }
+    // 一级节点检查
+    if (!root_node["jwt"]) throw std::runtime_error("Missing 'jwt' section");
     const auto& node = root_node["jwt"];
+    // 二级节点检查
+    if (!node["secret_key"]) throw std::runtime_error("Config Error: Missing 'jwt.secret_key'");
+    if (!node["issuer"]) throw std::runtime_error("Config Error: Missing 'jwt.issuer'");
+    if (!node["expiration_seconds"]) throw std::runtime_error("Config Error: Missing 'jwt.expiration_seconds'");
 
+    // 取值
     const std::string secret = node["secret_key"].as<std::string>();
     const std::string issuer = node["issuer"].as<std::string>();
     const int expire = node["expiration_seconds"].as<int>();
 
+    // 校验
     ValidateNotEmpty(secret, "JWT Secret Key");
     ValidateNotEmpty(issuer, "JWT Issuer");
+    if (expire <= 0) throw std::runtime_error("Config Error: JWT expiration_seconds must be positive");
 
-    if (expire <= 0) {
-        throw std::runtime_error("Config Error: JWT expiration_seconds must be positive");
-    }
-
+    // 赋值
     jwt_config_ = {secret, issuer, expire};
     SPDLOG_INFO("JWT config loaded. Issuer: {}", issuer);
 }
 
-void AppConfig::ValidatePort(int port, const std::string& field_name) const {
+void AppConfig::ValidatePort(int port, const std::string& field_name) {
     if (port <= 0 || port > 65535) {
         throw std::runtime_error(
             fmt::format("Config Error: {} value '{}' is invalid. Must be between 1 and 65535", field_name, port)
@@ -103,7 +119,7 @@ void AppConfig::ValidatePort(int port, const std::string& field_name) const {
     }
 }
 
-void AppConfig::ValidateNotEmpty(const std::string& value, const std::string& field_name) const {
+void AppConfig::ValidateNotEmpty(const std::string& value, const std::string& field_name) {
     if (value.empty()) {
         throw std::runtime_error(fmt::format("Config Error: '{}' cannot be empty", field_name));
     }

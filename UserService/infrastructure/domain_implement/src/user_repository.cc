@@ -74,7 +74,6 @@ boost::asio::awaitable<std::expected<std::optional<User>, DbError>> UserReposito
             SPDLOG_WARN("Serialization failed for user {}: {}", id, e.what());
         }
     }
-
     co_return db_result_exp;
 }
 

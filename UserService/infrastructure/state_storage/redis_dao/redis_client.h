@@ -23,6 +23,7 @@ namespace user_service::infrastructure {
     struct RedisConfig {
         std::string host;
         std::string port;
+        int pool_size;
     };
 
     class RedisClient {
@@ -38,7 +39,7 @@ namespace user_service::infrastructure {
          * 注意：此时 Ping 只是在 Init 中被调用，理论上没有线程安全问题，但是为了防止后续被多线程环境使用，对函数内部进行了安全处理
          */
         // 等待联通
-        boost::asio::awaitable<std::expected<void, RedisError>> Ping() const;
+        boost::asio::awaitable<std::expected<void, RedisError>> Ping(const std::shared_ptr<boost::redis::connection>& conn) const;
 
         /*
          * 注意：这个函数目前工作量不大，所以和 conn->async_exec 一起在 strand 串行区进行处理。
@@ -50,8 +51,17 @@ namespace user_service::infrastructure {
             const boost::system::result<boost::redis::resp3::node, boost::redis::adapter::error>& result,
             const std::string& command_name, const std::string& key_context= "");
 
+        // 获取下一个连接 (Round-Robin 策略)
+        std::shared_ptr<boost::redis::connection> GetNextConnection() const;
+
+
         const std::shared_ptr<boost::asio::io_context> ioc_;
-        std::shared_ptr<boost::redis::connection> conn_;
+        // 维护连接池
+        std::vector<std::shared_ptr<boost::redis::connection>> conns_;
+        // std::shared_ptr<boost::redis::connection> conn_;
         boost::redis::config cfg_;
+
+        // 轮询计数器 (mutable 允许在 const 函数中修改)
+        mutable std::atomic<size_t> request_counter_{0};
     };
 }

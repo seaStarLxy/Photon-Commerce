@@ -5,6 +5,7 @@ server:
 redis:
   host: "grpc-dev-redis.bbqzfi.ng.0001.apse1.cache.amazonaws.com"
   port: 6379
+  pool_size: 4
 
 postgresql:
   host: "grpc-dev-database.cvosiiw6iypg.ap-southeast-1.rds.amazonaws.com"

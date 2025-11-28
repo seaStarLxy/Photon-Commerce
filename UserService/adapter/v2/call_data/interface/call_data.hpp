@@ -36,7 +36,13 @@ namespace user_service::adapter::v2 {
 
         ~CallData() override = default;
 
-        void Proceed() override {
+        void Proceed(const bool ok) override {
+            // ok 代表客户端当前状态，如果客户端已经断开，直接重置
+            if (!ok) {
+                SPDLOG_INFO("OK IS FALSE, status is {}", static_cast<int>(status_));
+                HandleFinish();
+                return;
+            }
             switch (status_) {
                 case State::WAIT_PROCESSING:
                     HandleProcess();

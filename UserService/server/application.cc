@@ -79,7 +79,22 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
 }
 
 Application::~Application() {
-    thread_pool_->Stop();
+    SPDLOG_INFO("Application shutting down...");
+
+    // 关闭 Server (切断流量，等待 RPC 线程结束)
+    if (server_) {
+        SPDLOG_INFO("Stopping gRPC Server...");
+        server_->Shutdown();
+        // 这里的 Shutdown 会等待 gRPC worker 线程全部 join，确保安全
+    }
+
+    // 停止业务线程池 (此时已无新任务进来)
+    if (thread_pool_) {
+        SPDLOG_INFO("Stopping Thread Pool...");
+        thread_pool_->Stop();
+    }
+
+    SPDLOG_INFO("Application shutdown complete.");
 }
 
 void Application::Run() const {

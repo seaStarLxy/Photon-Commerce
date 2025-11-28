@@ -11,31 +11,53 @@
 using namespace user_service::infrastructure;
 
 RedisClient::RedisClient(const std::shared_ptr<boost::asio::io_context>& ioc, const RedisConfig& config):
-    ioc_(ioc), conn_(std::make_shared<boost::redis::connection>(boost::asio::make_strand(ioc->get_executor())))
-{
-    SPDLOG_DEBUG("Execute RedisClient Constructor");
+    ioc_(ioc) {
+    if (config.pool_size <= 0) {
+        throw std::invalid_argument(fmt::format("Invalid Redis pool size: {}. Must be positive.", config.pool_size));
+    }
+    SPDLOG_DEBUG("Execute RedisClient Constructor with pool size: {}", config.pool_size);
     cfg_.addr.host = config.host;
     cfg_.addr.port = config.port;
+
+    // 日志等级
+    // boost::redis::logger l{boost::redis::logger::level::debug};
+    boost::redis::logger l{boost::redis::logger::level::disabled};
+
+    // 初始化连接池
+    const int size = config.pool_size;
+    conns_.reserve(size);
+    for(int i = 0; i < size; ++i) {
+        // 为每个连接绑定独立的 strand
+        conns_.emplace_back(std::make_shared<boost::redis::connection>(
+            boost::asio::make_strand(ioc->get_executor()), l));
+    }
+
 }
 
 RedisClient::~RedisClient() = default;
 
 
 boost::asio::awaitable<void> RedisClient::Init() {
-    SPDLOG_DEBUG("STARTING to connect redis");
-    // 启动连接
-    conn_->async_run(cfg_, boost::asio::detached);
-    SPDLOG_DEBUG("Redis async_run started");
+    SPDLOG_DEBUG("STARTING to connect redis pool (size: {})", conns_.size());
 
-    const auto ping_res = co_await Ping();
-    if (!ping_res.has_value()) {
-        std::string err_msg = fmt::format("Redis Init failed: {}", ping_res.error().message);
-        SPDLOG_CRITICAL("{}", err_msg);
-        // 启动阶段抛异常
-        throw std::runtime_error(err_msg);
+    // 启动所有连接
+    for (const auto& conn : conns_) {
+        conn->async_run(cfg_, boost::asio::detached);
+    }
+    SPDLOG_DEBUG("Redis pool async_run started");
+
+    // 检查每个的连接状态
+    for (size_t i = 0; i < conns_.size(); ++i) {
+        const auto ping_res = co_await Ping(conns_[i]);
+        if (!ping_res.has_value()) {
+            std::string err_msg = fmt::format("Redis Pool Init failed at connection [{}]: {}", i, ping_res.error().message);
+            SPDLOG_CRITICAL("{}", err_msg);
+            // 启动阶段抛异常
+            throw std::runtime_error(err_msg);
+        }
     }
 
-    SPDLOG_INFO("Redis Init successfully.");
+    SPDLOG_INFO("Redis Pool (size: {}) Init successfully.", conns_.size());
 }
 
 boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Set(const std::string& key, const std::string& value) const {
@@ -44,9 +66,11 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Set(const s
         boost::redis::request req;
         req.push("SET", key, value);
 
+        const auto conn = GetNextConnection();
+
         // 进入串行区
-        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
-        co_await conn_->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
+        co_await boost::asio::post(conn->get_executor(), boost::asio::use_awaitable);
+        co_await conn->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
 
         co_return std::expected<void, RedisError>();
     } catch (const std::exception& e) {
@@ -70,9 +94,11 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Set(const s
             req.push("SET", key, value);
         }
 
+        const auto conn = GetNextConnection();
+
         // 进入串行区
-        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
-        co_await conn_->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
+        co_await boost::asio::post(conn->get_executor(), boost::asio::use_awaitable);
+        co_await conn->async_exec(req, boost::redis::ignore, boost::asio::use_awaitable);
 
         co_return std::expected<void, RedisError>();
     } catch (const std::exception& e) {
@@ -93,9 +119,11 @@ boost::asio::awaitable<std::expected<std::optional<std::string>, RedisError>> Re
 
         boost::redis::response<boost::redis::resp3::node> resp;
 
+        const auto conn = GetNextConnection();
+
         // 进入串行区
-        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
-        co_await conn_->async_exec(req, resp, boost::asio::use_awaitable);
+        co_await boost::asio::post(conn->get_executor(), boost::asio::use_awaitable);
+        co_await conn->async_exec(req, resp, boost::asio::use_awaitable);
 
         co_return ExtractResult(std::get<0>(resp), "GET", key);
     } catch (const std::exception& e) {
@@ -108,7 +136,7 @@ boost::asio::awaitable<std::expected<std::optional<std::string>, RedisError>> Re
     }
 }
 
-boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Ping() const {
+boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Ping(const std::shared_ptr<boost::redis::connection>& conn) const {
     try {
         boost::redis::request req;
         req.push("PING");
@@ -116,8 +144,8 @@ boost::asio::awaitable<std::expected<void, RedisError>> RedisClient::Ping() cons
         boost::redis::response<boost::redis::resp3::node> resp;
 
         // 进入串行区
-        co_await boost::asio::post(conn_->get_executor(), boost::asio::use_awaitable);
-        co_await conn_->async_exec(req, resp, boost::asio::use_awaitable);
+        co_await boost::asio::post(conn->get_executor(), boost::asio::use_awaitable);
+        co_await conn->async_exec(req, resp, boost::asio::use_awaitable);
 
         auto result = ExtractResult(std::get<0>(resp), "PING", "Init");
 
@@ -188,4 +216,11 @@ std::expected<std::optional<std::string>, RedisError> RedisClient::ExtractResult
                                   command_name, static_cast<int>(node.data_type), key_context);
     SPDLOG_WARN("{}", msg);
     return std::unexpected(RedisError{RedisErrorType::ProtocolError, msg});
+}
+
+std::shared_ptr<boost::redis::connection> RedisClient::GetNextConnection() const {
+    // 原子递增取模，实现 Round-Robin 策略
+    const size_t idx = request_counter_.fetch_add(1, std::memory_order_relaxed) % conns_.size();
+    SPDLOG_DEBUG("Get the {} redis conn", idx);
+    return conns_[idx];
 }

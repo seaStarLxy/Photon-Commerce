@@ -48,20 +48,21 @@ void UserServiceServer::Run() {
 
     /* 模版播种法 */
     SPDLOG_DEBUG("Seeded Template CallData.");
+    int call_data_num = 3000;
     // 注册
-    RegisterCallDataManager register_manager = RegisterCallDataManager(100, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    RegisterCallDataManager register_manager = RegisterCallDataManager(call_data_num, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
     register_manager.Start();
     // 发送验证码
-    SendCodeCallDataManager send_code_manager = SendCodeCallDataManager(100, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    SendCodeCallDataManager send_code_manager = SendCodeCallDataManager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
     send_code_manager.Start();
     // 密码登录
-    LoginByPasswordCallDataManager login_pw_manager(100, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    LoginByPasswordCallDataManager login_pw_manager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
     login_pw_manager.Start();
     // 验证码登录
-    LoginByCodeCallDataManager login_code_manager(100, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    LoginByCodeCallDataManager login_code_manager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
     login_code_manager.Start();
     // 获取用户信息
-    GetUserInfoCallDataManager get_user_info_manager(100, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    GetUserInfoCallDataManager get_user_info_manager(call_data_num, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
     get_user_info_manager.Start();
 
 
@@ -79,11 +80,27 @@ void UserServiceServer::Run() {
 }
 
 void UserServiceServer::Shutdown() {
-    server_->Shutdown();
-    cq_->Shutdown();
-    for (auto &t: worker_threads_) {
-        t.join();
+    SPDLOG_INFO("UserServiceServer shutting down...");
+
+    // 停止 gRPC Server
+    if (server_) {
+        server_->Shutdown();
     }
+
+    // 关闭 CQ
+    if (cq_) {
+        cq_->Shutdown();
+    }
+
+    // 安全回收 Worker 线程 (避免 std::terminate)
+    for (auto &t: worker_threads_) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    worker_threads_.clear();
+
+    SPDLOG_INFO("UserServiceServer shutdown finished.");
 }
 
 void UserServiceServer::HandleRpc() const {
@@ -92,11 +109,7 @@ void UserServiceServer::HandleRpc() const {
 
     // 循环：阻塞地从 CQ 中取事件
     while (cq_->Next(&tag, &ok)) {
-        if (!ok) {
-            // CQ 正在关闭
-            break;
-        }
         SPDLOG_DEBUG("Get one request");
-        static_cast<ICallData*>(tag)->Proceed();
+        static_cast<ICallData*>(tag)->Proceed(ok);
     }
 }

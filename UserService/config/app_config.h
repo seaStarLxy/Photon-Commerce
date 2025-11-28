@@ -28,8 +28,8 @@ namespace user_service::config {
         void ParseJwtConfig(const YAML::Node& root_node);
 
         /* 校验逻辑 */
-        void ValidatePort(int port, const std::string& field_name) const;
-        void ValidateNotEmpty(const std::string& value, const std::string& field_name) const;
+        static void ValidatePort(int port, const std::string& field_name);
+        static void ValidateNotEmpty(const std::string& value, const std::string& field_name);
 
         infrastructure::RedisConfig redis_config_;
         infrastructure::DbPoolConfig db_pool_config_;

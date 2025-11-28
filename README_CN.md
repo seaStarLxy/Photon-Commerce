@@ -11,7 +11,7 @@
 
 **Photon-Commerce** 是一个基于 **C++23** 和 **gRPC** 构建的高性能、云原生分布式电商平台引擎。
 
-本项目旨在探索极致的后端性能与架构设计，融合了 **协程**、**无锁编程**、**领域驱动设计** 以及 **Saga 分布式事务** 等先进技术理念。
+本项目旨在探索极致的后端性能与架构设计，融合了 **协程**、**零成本抽象**、**无锁编程**、**领域驱动设计** 以及 **Saga 分布式事务** 等先进技术理念。
 
 ---
 
@@ -81,7 +81,7 @@
 
 ```bash
 # 首次克隆
-git clone --recursive git@github.com:seaStarLxy/ECommerceSystem-Microservices.git
+git clone --recursive git@github.com:seaStarLxy/Photon-Commerce.git
 
 # 若已克隆但缺少子模块
 git submodule update --init --recursive
