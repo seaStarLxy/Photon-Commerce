@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 project(UserService LANGUAGES CXX)
 
+
+# 编译器参数：关闭优化(-O0)，开启调试信息(-g)，开启覆盖率(--coverage)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -O0 -g")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -O0 -g")
+
+# 链接器参数
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
+
+
 # 注意协程需要 C23 标准以上
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,8 +26,8 @@ find_package(cryptopp REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-#add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
-add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
+add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+#add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
 
 
 # 自定义 IDL 目录
@@ -178,3 +188,4 @@ target_link_libraries(UserServiceServer PUBLIC
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/config.yaml
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/config)
+

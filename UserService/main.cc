@@ -8,14 +8,17 @@
 using namespace user_service::server;
 namespace di = boost::di;
 
+
 void LogInit() {
-    // spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::trace);
     // spdlog::set_level(spdlog::level::critical);
-    spdlog::set_level(spdlog::level::off);
+    // spdlog::set_level(spdlog::level::off);
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%s:%# (%!)] %v");
 }
 
 int main() {
+    // std::signal(SIGINT, signal_handler);
+    // std::signal(SIGTERM, signal_handler);
     LogInit();
     try {
         // 加载配置并启动应用

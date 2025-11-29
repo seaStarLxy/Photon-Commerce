@@ -3,3 +3,10 @@
 
 # 调试文件
 project_context.txt
+
+# --- Coverage Reports ---
+*.gcno
+*.gcda
+*.info
+coverage_report/
+cmake-build-debug-*/

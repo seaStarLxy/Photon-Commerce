@@ -34,46 +34,50 @@
 > 详细性能调优过程与分析请参考 [📄 性能调优报告](./docs/performance_tuning.md)
 
 ### 性能报告摘要
-| 测试类型 | 测试目的 | 测试方法 | 测试结果摘要 |
-| :--- | :--- | :--- | :--- |
-| **微基准测试** | 测试引擎纯算力上限 | Mock 数据 (无 Redis) | **3.8万 QPS** |
-| **基准测试** | 测试实战链路表现 | 读写真实 Redis | **2.3万 ~ 2.5万 QPS** |
-| **长跑测试** | 测试系统健壮性 | 持续运行 1亿+ 请求 | **1h 41min, 0 Error** |
+| 测试类型      | 测试目的      | 测试方法              | 测试结果摘要                |
+|:----------|:----------|:------------------|:----------------------|
+| **微基准测试** | 测试引擎纯算力上限 | Mock 数据 (无 Redis) | **3.8万 QPS**          |
+| **基准测试**  | 测试实战链路表现  | 读写真实 Redis        | **2.3万 ~ 2.5万 QPS**   |
+| **长跑测试**  | 测试系统健壮性   | 持续运行 1亿+ 请求       | **1h 41min, 0 Error** |
+
 
 <details>
 <summary>👉 <b>点击展开查看：微基准测试运行截图</b></summary>
 
-![perf_micro_benchmark](docs/images/zh/perf_micro_benchmark.png)
+![perf_micro_benchmark](docs/images/common/perf_micro_benchmark.png)
 </details>
+
 
 <details>
 <summary>👉 <b>点击展开查看：基准测试运行截图</b></summary>
 
-![perf_benchmark](docs/images/zh/perf_benchmark.png)
+![perf_benchmark](docs/images/common/perf_benchmark.png)
 </details>
+
 
 <details>
 <summary>👉 <b>点击展开查看：长跑测试运行截图</b></summary>
 
-![perf_long_run](docs/images/zh/perf_long_run.png)
+![perf_long_run](docs/images/common/perf_long_run.png)
 </details>
+
 
 
 ### 🛠️ 测试环境 (Test Environment)
 为了还原真实的生产环境限制，本次测试**并未**使用顶级硬件，而是旨在受限的云原生环境下挖掘架构极限。
 
-| 角色 | 部署平台 | 实例规格与配置                                  | 说明 |
-| :--- | :--- |:-----------------------------------------| :--- |
-| **Server (App)** | AWS EC2 | **`t3.xlarge`** (4 vCPU, 16GB RAM)       | 运行核心服务 (Ubuntu 24.04) |
-| **Redis (Cache)** | AWS ElastiCache | **`cache.t3.micro`** (2 vCPU, 0.5GB RAM) | **系统短板**，突发型实例限制了持续高并发能力 |
-| **PostgreSQL (DB)** | AWS RDS | **`db.t3.micro`** (2 vCPU, 1GB RAM)      | 低配持久化层，仅用于冷数据存储 |
-| **Client 1 (Stress)** | AWS EC2 | **`c5.xlarge`** (4 vCPU, 8GB RAM)        | 独立施压机，运行 `ghz` |
-| **Client 2 (Stress)** | AWS EC2 | **`c5.2xlarge`** (8 vCPU, 16GB RAM)      | 独立施压机，运行 `ghz` |
-| **Network** | AWS VPC | 同可用区内网                                   | 极低延迟 (< 1ms)，排除公网干扰 |
+| 角色                    | 部署平台            | 实例规格与配置                                  | 说明                       |
+|:----------------------|:----------------|:-----------------------------------------|:-------------------------|
+| **Server (App)**      | AWS EC2         | **`t3.xlarge`** (4 vCPU, 16GB RAM)       | 运行核心服务 (Ubuntu 24.04)    |
+| **Redis (Cache)**     | AWS ElastiCache | **`cache.t3.micro`** (2 vCPU, 0.5GB RAM) | **系统短板**，突发型实例限制了持续高并发能力 |
+| **PostgreSQL (DB)**   | AWS RDS         | **`db.t3.micro`** (2 vCPU, 1GB RAM)      | 低配持久化层，仅用于冷数据存储          |
+| **Client 1 (Stress)** | AWS EC2         | **`c5.xlarge`** (4 vCPU, 8GB RAM)        | 独立施压机，运行 `ghz`           |
+| **Client 2 (Stress)** | AWS EC2         | **`c5.2xlarge`** (8 vCPU, 16GB RAM)      | 独立施压机，运行 `ghz`           |
+| **Network**           | AWS VPC         | 同可用区内网                                   | 极低延迟 (< 1ms)，排除公网干扰      |
 
 ## 📐 系统架构与核心设计
 
-### 1. 后端服务全链路系统架构图 (Envoy + gRPC + PostgreSQL)
+### 1. 后端服务全链路系统架构图 (Envoy + gRPC + Redis + PostgreSQL)
 ![System Architecture](docs/images/zh/system_architecture_zh.png)
 
 ### 2. 双线程池协作的异步 I/O 处理流程详解
@@ -90,6 +94,22 @@
 
 ![CallData Design](docs/images/zh/CallData_impl_zh.png)
 </details>
+
+
+### 4. 基于 Strand 的 Redis 请求串行化机制
+<details>
+<summary>👉 <b>点击展开查看详情</b></summary>
+
+![Redis Strand](docs/images/zh/redis_strand_zh.png)
+</details>
+
+### 5. 
+<details>
+<summary>👉 <b>点击展开查看详情</b></summary>
+
+![DB Pool Strand](docs/images/zh/db_pool_strand_zh.png)
+</details>
+
 
 ---
 

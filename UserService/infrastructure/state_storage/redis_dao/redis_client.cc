@@ -182,7 +182,7 @@ std::expected<std::optional<std::string>, RedisError> RedisClient::ExtractResult
 
     // A: 系统级错误 (System Error)
     if (result.has_error()) {
-        std::string msg = fmt::format("Redis {} failed. Error: {}. Context: {}",
+        const std::string msg = fmt::format("Redis {} failed. Error: {}. Context: {}",
                                       command_name, result.error().diagnostic, key_context);
         SPDLOG_ERROR("{}", msg);
         return std::unexpected(RedisError{RedisErrorType::SystemError, msg});
@@ -205,14 +205,14 @@ std::expected<std::optional<std::string>, RedisError> RedisClient::ExtractResult
     if (node.data_type == boost::redis::resp3::type::simple_error ||
         node.data_type == boost::redis::resp3::type::blob_error) {
 
-        std::string msg = fmt::format("Redis {} Command Error: {}. Context: {}",
+        const std::string msg = fmt::format("Redis {} Command Error: {}. Context: {}",
                                       command_name, node.value, key_context);
         SPDLOG_ERROR("{}", msg);
         return std::unexpected(RedisError{RedisErrorType::CommandError, msg});
         }
 
     // E: 其他未预期的类型 (比如返回了 Array 或 Int)
-    std::string msg = fmt::format("Redis {} Protocol Error: Unexpected type {}. Context: {}",
+    const std::string msg = fmt::format("Redis {} Protocol Error: Unexpected type {}. Context: {}",
                                   command_name, static_cast<int>(node.data_type), key_context);
     SPDLOG_WARN("{}", msg);
     return std::unexpected(RedisError{RedisErrorType::ProtocolError, msg});
