@@ -31,7 +31,8 @@
 ---
 
 ## 💪 性能展示
-> 详细性能调优过程与分析请参考 [📄 性能调优报告](./docs/performance_tuning.md)
+
+[//]: # (> 详细性能调优过程与分析请参考 [📄 性能调优报告]&#40;./docs/performance_tuning.md&#41;)
 
 ### 性能报告摘要
 | 测试类型      | 测试目的      | 测试方法              | 测试结果摘要                |
@@ -40,7 +41,7 @@
 | **基准测试**  | 测试实战链路表现  | 读写真实 Redis        | **2.3万 ~ 2.5万 QPS**   |
 | **长跑测试**  | 测试系统健壮性   | 持续运行 1亿+ 请求       | **1h 41min, 0 Error** |
 
-
+> 微基准测试 和 基准测试 采用两台施压机同时施压
 <details>
 <summary>👉 <b>点击展开查看：微基准测试运行截图</b></summary>
 
@@ -92,7 +93,7 @@
 <details>
 <summary>👉 <b>点击展开查看详情</b></summary>
 
-![CallData Design](docs/images/zh/CallData_impl_zh.png)
+![CallData Design](docs/images/zh/call_data_impl_zh.png)
 </details>
 
 
@@ -103,13 +104,20 @@
 ![Redis Strand](docs/images/zh/redis_strand_zh.png)
 </details>
 
-### 5. 
+### 5. 基于 Strand 与 Channel 的无显示锁数据库连接池设计
 <details>
 <summary>👉 <b>点击展开查看详情</b></summary>
 
 ![DB Pool Strand](docs/images/zh/db_pool_strand_zh.png)
 </details>
 
+
+### 6. 核心业务逻辑流程图
+<details>
+<summary>👉 <b>点击展开查看详情</b></summary>
+
+![Core Business](docs/images/zh/core_business_zh.png)
+</details>
 
 ---
 

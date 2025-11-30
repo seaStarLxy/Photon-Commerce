@@ -14,9 +14,9 @@ void User::ChangePassword(const std::string& new_hash, const std::string& new_sa
     salt_ = new_salt;
 }
 
-void User::UpdateProfile(std::optional<std::string> username,
-                   std::optional<std::string> email,
-                   std::optional<std::string> avatar_url) {
+void User::UpdateProfile(const std::optional<std::string>& username,
+                   const std::optional<std::string>& email,
+                   const std::optional<std::string>& avatar_url) {
     if (username.has_value()) username_ = username;
     if (email.has_value()) email_ = email;
     if (avatar_url.has_value()) avatar_url_ = avatar_url;

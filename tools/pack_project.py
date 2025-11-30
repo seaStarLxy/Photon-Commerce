@@ -11,9 +11,9 @@ TARGET_EXTENSIONS = {
 
 # 设定必须要忽略的目录（防止文件过大炸掉）
 IGNORE_DIRS = {
-    '.git', '.idea', 'cmake-build-debug', 'cmake-build-debug-', 'cmake-build-release', 'cmake-build-release',
+    '.git', '.idea', 'cmake-build-debug', 'cmake-build-debug-', 'cmake-build-release', 'cmake-build-release-',
     'build', 'out', 'bin', 'third_party', 'vcpkg_installed', 'external', '.vscode', '.venv',
-    '__pycache__', 'logs', 'generated'
+    '__pycache__', 'logs', 'generated', 'envBuild'
 }
 
 # 特殊包含的文件名

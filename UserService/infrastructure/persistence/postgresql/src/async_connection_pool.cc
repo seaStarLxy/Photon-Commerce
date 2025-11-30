@@ -52,7 +52,7 @@ void AsyncConnectionPool::ReturnConnection(const std::shared_ptr<PQConnection>& 
         // 尝试直接发送给等待者
         // try_send 检查 Channel 内部队列是否有挂起的协程
         // 如果有，返回 true 并直接把 conn 塞给他唤醒；如果没有，返回 false
-        bool given_to_waiter = waiters_channel_.try_send(boost::system::error_code{}, conn);
+        const bool given_to_waiter = waiters_channel_.try_send(boost::system::error_code{}, conn);
 
         if (!given_to_waiter) {
             // 没有挂起等待的协程了，放回池子

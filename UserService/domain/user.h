@@ -30,11 +30,11 @@ namespace user_service::domain {
         using TimePoint = std::chrono::system_clock::time_point;
 
         /* 业务行为 */
-        void ChangePassword(const std::string &new_hash, const std::string &new_salt); // 修改密码
+        void ChangePassword(const std::string &new_hash, const std::string &new_salt);
 
-        void UpdateProfile(std::optional<std::string> username,
-                           std::optional<std::string> email,
-                           std::optional<std::string> avatar_url); // 修改个人资料
+        void UpdateProfile(const std::optional<std::string>& username,
+                           const std::optional<std::string>& email,
+                           const std::optional<std::string>& avatar_url);
 
         void MarkAsDeleted(); // 软删除
 
