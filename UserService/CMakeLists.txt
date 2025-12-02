@@ -34,6 +34,7 @@ find_package(jwt-cpp CONFIG REQUIRED)
 find_package(cryptopp REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(ppconsul CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 #add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
@@ -144,6 +145,10 @@ set(BUILTIN_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/builtin_impl/builtin_impl.cc"
 )
 
+set(REGISTRY_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/service_registry/src/consul_registry.cc"
+)
+
 # 添加主程序可执行文件
 add_executable(UserServiceServer
         main.cc
@@ -155,6 +160,7 @@ add_executable(UserServiceServer
         ${UTILS_FILES}
         ${CONFIG_FILES}
         ${BUILTIN_FILES}
+        ${REGISTRY_FILES}
 )
 
 # 添加预编译头文件 PCH
@@ -193,6 +199,7 @@ target_link_libraries(UserServiceServer PUBLIC
         stduuid
         yaml-cpp::yaml-cpp
         nlohmann_json::nlohmann_json
+        ppconsul
 )
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config/config.yaml

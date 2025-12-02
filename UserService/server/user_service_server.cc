@@ -20,10 +20,14 @@
 using namespace user_service::server;
 using namespace user_service::adapter::v2;
 
-UserServiceServer::UserServiceServer(const std::shared_ptr<service::IAuthService> &auth_service,
+UserServiceServer::UserServiceServer(const ServerConfig &server_config,
+                                     const RpcLimitsConfig &rpc_limits,
+                                     const std::shared_ptr<registry::ServiceRegistry> &registry,
+                                     const std::shared_ptr<service::IAuthService> &auth_service,
                                      const std::shared_ptr<service::IBasicUserService> &basic_service,
-                                     const std::shared_ptr<util::IJwtUtil>& jwt_util,
-                                     const std::shared_ptr<boost::asio::io_context> &ioc) : ioc_(ioc),
+                                     const std::shared_ptr<util::IJwtUtil> &jwt_util,
+                                     const std::shared_ptr<boost::asio::io_context> &ioc) : server_config_(
+        server_config), rpc_limits_(rpc_limits), registry_(registry), ioc_(ioc),
     auth_business_service_(auth_service), basic_user_business_service_(basic_service), jwt_util_(jwt_util) {
 }
 
@@ -31,16 +35,16 @@ UserServiceServer::~UserServiceServer() = default;
 
 void UserServiceServer::Run() {
     // 启动 gRPC 服务器
-    std::string ipv4_address("0.0.0.0:50051");
-    // std::string ipv6_address("[::]:50051");
+    std::string server_address = std::format("{}:{}", server_config_.bind_ip, server_config_.port);
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(ipv4_address, grpc::InsecureServerCredentials());
-    // builder.AddListeningPort(ipv6_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&auth_grpc_service_);
     builder.RegisterService(&basic_user_grpc_service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
-    SPDLOG_DEBUG("Server listening on {}", ipv4_address);
+    SPDLOG_DEBUG("Server listening on {}", server_address);
+
+    registry_->Register(server_config_.register_info);
 
     // 原始播种法
     // (new RegisterCallData(&service_, cq_.get(), *ioc_, basic_service_))->Init();
@@ -48,29 +52,49 @@ void UserServiceServer::Run() {
 
     /* 模版播种法 */
     SPDLOG_DEBUG("Seeded Template CallData.");
-    int call_data_num = 3000;
     // 注册
-    RegisterCallDataManager register_manager = RegisterCallDataManager(call_data_num, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    RegisterCallDataManager register_manager(
+        rpc_limits_.register_num,
+        &basic_user_grpc_service_,
+        basic_user_business_service_.get(),
+        jwt_util_.get(), ioc_, cq_.get());
     register_manager.Start();
+
     // 发送验证码
-    SendCodeCallDataManager send_code_manager = SendCodeCallDataManager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    SendCodeCallDataManager send_code_manager(
+        rpc_limits_.send_code_num,
+        &auth_grpc_service_,
+        auth_business_service_.get(), jwt_util_.get(),
+        ioc_, cq_.get());
     send_code_manager.Start();
+
     // 密码登录
-    LoginByPasswordCallDataManager login_pw_manager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    LoginByPasswordCallDataManager login_pw_manager(
+        rpc_limits_.login_pw_num,
+        &auth_grpc_service_, auth_business_service_.get(),
+        jwt_util_.get(), ioc_, cq_.get());
     login_pw_manager.Start();
+
     // 验证码登录
-    LoginByCodeCallDataManager login_code_manager(call_data_num, &auth_grpc_service_, auth_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    LoginByCodeCallDataManager login_code_manager(
+        rpc_limits_.login_code_num,
+        &auth_grpc_service_, auth_business_service_.get(),
+        jwt_util_.get(), ioc_, cq_.get());
     login_code_manager.Start();
+
     // 获取用户信息
-    GetUserInfoCallDataManager get_user_info_manager(call_data_num, &basic_user_grpc_service_, basic_user_business_service_.get(), jwt_util_.get(), ioc_, cq_.get());
+    GetUserInfoCallDataManager get_user_info_manager(
+        rpc_limits_.get_user_info_num,
+        &basic_user_grpc_service_,
+        basic_user_business_service_.get(), jwt_util_.get(), ioc_,
+        cq_.get());
     get_user_info_manager.Start();
 
 
     // 启动 Worker 线程池
-    unsigned num_workers = std::thread::hardware_concurrency();
-    SPDLOG_DEBUG("Starting {} worker threads...", num_workers);
-    worker_threads_.reserve(num_workers);
-    for (int i = 0; i < num_workers; ++i) {
+    SPDLOG_DEBUG("Starting {} worker threads...", server_config_.worker_threads);
+    worker_threads_.reserve(server_config_.worker_threads);
+    for (int i = 0; i < server_config_.worker_threads; ++i) {
         worker_threads_.emplace_back(&UserServiceServer::HandleRpc, this);
     }
     SPDLOG_DEBUG("Worker threads startup finished");
@@ -110,6 +134,6 @@ void UserServiceServer::HandleRpc() const {
     // 循环：阻塞地从 CQ 中取事件
     while (cq_->Next(&tag, &ok)) {
         SPDLOG_DEBUG("Get one request");
-        static_cast<ICallData*>(tag)->Proceed(ok);
+        static_cast<ICallData *>(tag)->Proceed(ok);
     }
 }
