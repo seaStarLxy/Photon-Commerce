@@ -1,6 +1,35 @@
 # config.yaml 数据未脱敏
+
+# ===============
+#  服务端基础配置
+# ===============
 server:
-  port: 50051
+  name: "user-service"         # 服务名，注册到 Consul 的 ID
+  bind_ip: "0.0.0.0"           # 监听地址
+  port: 50051                  # 监听端口
+  registry_ip: "172.31.30.185"
+  listen_threads: 2            # CallData 监听线程数 0 代表使用硬件核心数
+  worker_threads: 0            # 工作线程数 0 代表使用硬件核心数
+
+# Consul 连接配置
+consul:
+  host: "127.0.0.1"            # Consul Agent 的地址 (Docker Host模式下为本机)
+  port: 8500
+  check_interval: 10           # 健康检查间隔(秒)
+  check_timeout: 2             # 健康检查超时(秒)
+
+# RPC 并发限制 (CallData 数量调优)
+rpc_limits:
+  register: 1000               # 注册接口：并发相对低
+  send_code: 2000              # 发送验证码
+  login_pw: 5000               # 密码登录：高频
+  login_code: 5000             # 验证码登录：高频
+  get_user_info: 8000          # 获取信息：读操作，并发最高
+
+
+# =============
+#  基础设施配置
+# =============
 
 redis:
   host: "grpc-dev-redis.bbqzfi.ng.0001.apse1.cache.amazonaws.com"

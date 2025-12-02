@@ -22,6 +22,9 @@
 #include "utils/include/security_util.h"
 #include "utils/include/jwt_util.h"
 
+#include "service_registry/interface/service_registry.h"
+#include "service_registry/include/consul_registry.h"
+
 #include "config/app_config.h"
 
 using namespace user_service::infrastructure;
@@ -30,6 +33,7 @@ using namespace user_service::server;
 using namespace user_service::util;
 using namespace user_service::domain;
 using namespace user_service::config;
+using namespace user_service::registry;
 
 namespace di = boost::di;
 
@@ -43,6 +47,9 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
     const auto redis_config = app_config.GetRedisConfig();
     const auto db_pool_config = app_config.GetDBPoolConfig();
     const auto jwt_config = app_config.GetJwtConfig();
+    const auto server_config = app_config.GetServerConfig();
+    const auto rpc_limits_config = app_config.GetRpcLimitsConfig();
+    const auto consul_config = app_config.GetConsulConfig();
 
     /*
      * bind<T> 要什么，传入T，可以自动解析构造函数中的 T T* T智能指针等等
@@ -55,6 +62,9 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
     const auto injector = di::make_injector(
         di::bind<boost::asio::io_context>().to(ioc_),
         di::bind<DbPoolConfig>().to(db_pool_config),
+        di::bind<ServerConfig>().to(server_config),
+        di::bind<RpcLimitsConfig>().to(rpc_limits_config),
+        di::bind<ConsulConfig>().to(consul_config),
         di::bind<AsyncConnectionPool>().in(di::singleton),
         di::bind<UserDao>().in(di::singleton),
         di::bind<RedisConfig>().to(redis_config),
@@ -67,7 +77,8 @@ Application::Application(std::string&& config_filepath): config_path_(std::move(
         di::bind<IVerificationCodeRepository>().to<VerificationCodeRepository>().in(di::singleton),
         di::bind<IUserRepository>().to<UserRepository>().in(di::singleton),
         di::bind<IAuthService>().to<AuthService>().in(di::singleton),
-        di::bind<IBasicUserService>().to<BasicUserService>().in(di::singleton)
+        di::bind<IBasicUserService>().to<BasicUserService>().in(di::singleton),
+        di::bind<ServiceRegistry>().to<ConsulRegistry>().in(di::singleton)
     );
     // 获取核心资源（后面需要初始化）
     redis_client_ = injector.create<std::shared_ptr<RedisClient>>();

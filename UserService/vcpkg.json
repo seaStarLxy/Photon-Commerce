@@ -15,6 +15,7 @@
     "yaml-cpp",
     "jwt-cpp",
     "picojson",
-    "nlohmann-json"
+    "nlohmann-json",
+    "ppconsul"
   ]
 }
