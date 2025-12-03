@@ -7,10 +7,20 @@
 #include "service/interface/i_basic_user_service.h"
 #include "service/interface/i_auth_service.h"
 #include "utils/interface/i_jwt_util.h"
+
 #include "service_registry/interface/service_registry.h"
 #include <thread>
 #include <grpcpp/grpcpp.h>
 #include <boost/asio/io_context.hpp>
+
+// 前向声明
+namespace user_service::adapter::v2 {
+    class RegisterCallDataManager;
+    class SendCodeCallDataManager;
+    class LoginByPasswordCallDataManager;
+    class LoginByCodeCallDataManager;
+    class GetUserInfoCallDataManager;
+}
 
 namespace user_service::server {
     // 配置 server
@@ -53,11 +63,24 @@ namespace user_service::server {
     private:
         void HandleRpc() const;
 
+        void StartServer();
+
+        void StartListeningThread();
+
+        void SeedCallData();
+
 
         std::unique_ptr<grpc::ServerCompletionQueue> cq_;
         proto::v1::AuthService::AsyncService auth_grpc_service_;
         proto::v1::UserService::AsyncService basic_user_grpc_service_;
         std::unique_ptr<grpc::Server> server_;
+
+        std::unique_ptr<adapter::v2::RegisterCallDataManager> register_manager_{};
+        std::unique_ptr<adapter::v2::SendCodeCallDataManager> send_code_manager_{};
+        std::unique_ptr<adapter::v2::LoginByPasswordCallDataManager> login_pw_manager_{};
+        std::unique_ptr<adapter::v2::LoginByCodeCallDataManager> login_code_manager_{};
+        std::unique_ptr<adapter::v2::GetUserInfoCallDataManager> get_user_info_manager_{};
+
         std::vector<std::thread> worker_threads_;
 
         ServerConfig server_config_;
