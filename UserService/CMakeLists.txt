@@ -20,6 +20,10 @@ else()
 endif()
 
 
+add_compile_options(-O2 -g -fno-omit-frame-pointer)
+message(STATUS ">>> 正在构建性能分析版本: 开启了 -O2, -g 和 Frame Pointer <<<")
+
+
 # 注意协程需要 C23 标准以上
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,8 +40,8 @@ find_package(yaml-cpp CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(ppconsul CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
-#add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
+#add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_OFF)
 
 
 # 自定义 IDL 目录
